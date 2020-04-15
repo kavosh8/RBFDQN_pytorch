@@ -72,7 +72,7 @@ class Net(nn.Module):
         
         #params
         self.N = 50
-        self.beta = 2
+        self.beta = 3
         self.state_size = 10
         self.action_size = 2
         self.max_a = 5
@@ -80,14 +80,31 @@ class Net(nn.Module):
         #params
 
         self.value_side1 = nn.Linear(self.state_size, 100)
+        self.value_side1_parameters = self.value_side1.parameters()
         self.value_side2 = nn.Linear(100, self.N)
+        self.value_side2_parameters = self.value_side2.parameters()
+
         self.location_side1 = nn.Linear(self.state_size, 100)
         self.location_side2 = []
         for _ in range(self.N):
             self.location_side2.append(nn.Linear(100, self.action_size))
         self.criterion = nn.MSELoss()
-        self.optimizer = optim.Adam(self.parameters(), lr=self.lr)
-
+        #print(list(self.parameters()))
+        #assert False
+        #assert False
+        #print([x.shape for x in list(self.parameters())])
+        #assert False
+        #print(list(self.parameters()))
+        #self.optimizer = optim.Adam(self.parameters(), lr=1e-2)
+        
+        params_dic=[]
+        params_dic.append({'params': self.value_side1_parameters, 'lr': 1e-2})
+        params_dic.append({'params': self.value_side2_parameters, 'lr': 1e-2})
+        params_dic.append({'params': self.location_side1.parameters(), 'lr': 5e-3}) 
+        for i in range(self.N):
+            params_dic.append({'params': self.location_side2[i].parameters(), 'lr': 5e-3}) 
+        self.optimizer = optim.Adam(params_dic)
+        
     def forward(self, s, a):
 
         temp = F.relu(self.value_side1(s))
@@ -111,12 +128,23 @@ class Net(nn.Module):
         self.optimizer.zero_grad()
         return self.loss
 
+    def get_all_centroids(s):
+        "TBD"
 
+    def get_best_centroid(s):
+        "TBD"
+    def get_centroid_weights(s,a):
+        "TBD"
+    def get_centroid_values(s):
+        "TBD"
+
+numpy.random.seed(0)
+torch.manual_seed(7)
 net = Net()
 sampler_function=ackley_problem.ackley_function_get_batch
 
-max_iter = 1000
-batch_size = 256
+max_iter = 5000
+batch_size = 128
 for counter in range(max_iter):
     x_batch,y_batch = sampler_function(batch_size)
     s,a,y = torch.FloatTensor(numpy.zeros((batch_size,10))),torch.FloatTensor(x_batch),torch.FloatTensor(y_batch)
