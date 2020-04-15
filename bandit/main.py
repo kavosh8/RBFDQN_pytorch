@@ -71,7 +71,7 @@ class Net(nn.Module):
         super(Net, self).__init__()
         
         #params
-        self.N = 50
+        self.N = 30
         self.beta = 3
         self.state_size = 10
         self.action_size = 2
@@ -106,14 +106,8 @@ class Net(nn.Module):
         self.optimizer = optim.Adam(params_dic)
         
     def forward(self, s, a):
-
-        temp = F.relu(self.value_side1(s))
-        centroid_values = self.value_side2(temp)
-        temp = F.relu(self.location_side1(s))
-        
-        centroid_locations = []
-        for i in range(self.N):
-            centroid_locations.append( self.max_a*torch.tanh(self.location_side2[i](temp)) )
+        centroid_values = self.get_centroid_values(s)
+        centroid_locations = self.get_all_centroids(s)
         centroid_weights = rbf_function(centroid_locations, a, self.beta, self.N)
         output = torch.mul(centroid_weights,centroid_values)
         output = output.sum(1,keepdim=True)
@@ -128,29 +122,54 @@ class Net(nn.Module):
         self.optimizer.zero_grad()
         return self.loss
 
-    def get_all_centroids(s):
-        "TBD"
+    def get_all_centroids(self, s):
+        temp = F.relu(self.location_side1(s))
+        centroid_locations = []
+        for i in range(self.N):
+            centroid_locations.append( self.max_a*torch.tanh(self.location_side2[i](temp)) )
+        return centroid_locations
+        
+    def get_best_centroid(self, s, maxOrmin='max'):
+        all_centroids = self.get_all_centroids(s)
+        all_centroids_matrix = torch.cat(all_centroids, dim=0)
+        weights = rbf_function(all_centroids, all_centroids_matrix, self.beta, self.N)
+        values = self.get_centroid_values(s)
+        values = torch.transpose(values, 0, 1)
+        temp = torch.mm(weights,values)
+        if maxOrmin=='max':
+            values, indices = temp.max(0)
+        elif maxOrmin=='min':
+            values, indices = temp.min(0)
+        Q_star = values.data.numpy()[0]
+        index_star = indices.data.numpy()[0]
+        a_star = list(all_centroids[index_star].data.numpy()[0])
+        return Q_star, a_star
 
-    def get_best_centroid(s):
-        "TBD"
-    def get_centroid_weights(s,a):
-        "TBD"
-    def get_centroid_values(s):
-        "TBD"
+    def get_centroid_values(self, s):
+        temp = F.relu(self.value_side1(s))
+        centroid_values = self.value_side2(temp)
+        return centroid_values
 
 numpy.random.seed(0)
 torch.manual_seed(7)
 net = Net()
+
 sampler_function=ackley_problem.ackley_function_get_batch
 
-max_iter = 5000
-batch_size = 128
+max_iter = 2000
+batch_size = 256
 for counter in range(max_iter):
     x_batch,y_batch = sampler_function(batch_size)
     s,a,y = torch.FloatTensor(numpy.zeros((batch_size,10))),torch.FloatTensor(x_batch),torch.FloatTensor(y_batch)
     loss = net.update(s,a,y)
     if counter%50 == 0:
         print("loss: ",loss)
-plot(net)
+
+s = torch.FloatTensor(numpy.zeros((1,10)))
+Q_star, a_star = net.get_best_centroid(s)
+print(Q_star,a_star)
+Q_star, a_star = net.get_best_centroid(s,maxOrmin = 'min')
+print(Q_star,a_star)
+assert False
 
 
