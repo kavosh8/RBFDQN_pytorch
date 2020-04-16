@@ -214,6 +214,7 @@ if __name__=='__main__':
 		s,done=env.reset(),False
 		while done==False:
 			a=Q_object.e_greedy_policy(s,episode+1,'train')
+			print(s,a)
 			sp,r,done,_=env.step(numpy.array(a))
 			Q_object.buffer_object.append(s,a,r,done,sp)
 			s=sp
