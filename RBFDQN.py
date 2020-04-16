@@ -8,6 +8,27 @@ import torch.nn.functional as F
 import torch.optim as optim
 import numpy
 
+def rbf_function_single(centroid_locations, beta, N):
+	'''
+		no batch
+		given N centroids * size of each centroid
+		determine weight of each centroid at each other centroid
+	'''
+	diff_norm_smoothed_negated = []
+	centroid_locations_cat = torch.cat(centroid_locations, dim=0)
+	for i in range(N):
+		centroid_i = centroid_locations_cat[i,:].unsqueeze(0)
+		centroid_i = torch.cat([centroid_i for _ in range(N)],dim=0)
+		diff_i = centroid_locations_cat - centroid_i
+		diff_norm_i = torch.norm(diff_i,p=2,dim=1)
+		diff_norm_smoothed_negated_i = diff_norm_i * beta * -1
+		diff_norm_smoothed_negated_i = diff_norm_smoothed_negated_i.unsqueeze(0)
+		diff_norm_smoothed_negated.append(diff_norm_smoothed_negated_i)
+
+	diff_norm_smoothed_negated = torch.cat(diff_norm_smoothed_negated,dim=0)
+	weights = F.softmax(diff_norm_smoothed_negated, dim=1)
+	return weights
+
 def rbf_function(centroid_locations, action, beta, N):
 	'''
 		given batch size * N centroids * size of each centroid
@@ -50,6 +71,8 @@ class Net(nn.Module):
 		self.value_side4 = nn.Linear(self.params['layer_size'], self.N)
 		self.value_side4_parameters = self.value_side4.parameters()
 
+		self.drop = nn.Dropout(p=0.4)
+
 		self.location_side1 = nn.Linear(self.state_size, self.params['layer_size'])
 		self.location_side2 = []
 		for _ in range(self.N):
@@ -57,16 +80,16 @@ class Net(nn.Module):
 		self.criterion = nn.MSELoss()
 
 
-		params_dic=[]
-		params_dic.append({'params': self.value_side1_parameters, 'lr': self.params['learning_rate']})
-		params_dic.append({'params': self.value_side2_parameters, 'lr': self.params['learning_rate']})
+		self.params_dic=[]
+		self.params_dic.append({'params': self.value_side1_parameters, 'lr': self.params['learning_rate']})
+		self.params_dic.append({'params': self.value_side2_parameters, 'lr': self.params['learning_rate']})
 		
-		params_dic.append({'params': self.value_side3_parameters, 'lr': self.params['learning_rate']})
-		params_dic.append({'params': self.value_side4_parameters, 'lr': self.params['learning_rate']})
-		params_dic.append({'params': self.location_side1.parameters(), 'lr': self.params['learning_rate']}) 
+		self.params_dic.append({'params': self.value_side3_parameters, 'lr': self.params['learning_rate']})
+		self.params_dic.append({'params': self.value_side4_parameters, 'lr': self.params['learning_rate']})
+		self.params_dic.append({'params': self.location_side1.parameters(), 'lr': self.params['learning_rate']}) 
 		for i in range(self.N):
-		    params_dic.append({'params': self.location_side2[i].parameters(), 'lr': self.params['learning_rate']}) 
-		self.optimizer = optim.Adam(params_dic)
+		    self.params_dic.append({'params': self.location_side2[i].parameters(), 'lr': self.params['learning_rate']}) 
+		self.optimizer = optim.RMSprop(self.params_dic)
 
 	def forward(self, s, a):
 		centroid_values = self.get_centroid_values(s)
@@ -85,6 +108,7 @@ class Net(nn.Module):
 
 	def get_all_centroids(self, s):
 		temp = F.relu(self.location_side1(s))
+		temp = self.drop(temp)
 		centroid_locations = []
 		for i in range(self.N):
 		    centroid_locations.append( self.max_a*torch.tanh(self.location_side2[i](temp)) )
@@ -93,7 +117,7 @@ class Net(nn.Module):
 	def get_best_centroid(self, s, maxOrmin='max'):
 		all_centroids = self.get_all_centroids(s)
 		all_centroids_matrix = torch.cat(all_centroids, dim=0)
-		weights = rbf_function(all_centroids, all_centroids_matrix, self.beta, self.N)
+		weights = rbf_function_single(all_centroids, self.beta, self.N)
 		values = self.get_centroid_values(s)
 		values = torch.transpose(values, 0, 1)
 		temp = torch.mm(weights,values)
@@ -106,7 +130,7 @@ class Net(nn.Module):
 		a_star = list(all_centroids[index_star].data.numpy()[0])
 		return Q_star, a_star
 	
-	def get_best_centroid_batch(self, s, maxOrmin='max'):
+	def get_best_centroid_batch(self, s):
 		'''
 			given a batch of states s
 			determine max_{a} Q(s,a)
@@ -115,8 +139,9 @@ class Net(nn.Module):
 		values = self.get_centroid_values(s)
 		li=[]
 		for i in range(self.N):
+			#print(all_centroids[i].shape)
 			weights = rbf_function(all_centroids, all_centroids[i], self.beta, self.N)
-			temp = torch.sum(torch.mul(weights,values),dim=1,keepdim=True)
+			temp = torch.sum(torch.mul(weights,values), dim=1, keepdim=True)
 			li.append(temp)
 		allQ=torch.cat(li,dim=1)
 		best,_ = allQ.max(1)
@@ -162,6 +187,7 @@ class Net(nn.Module):
 		y_hat = self.forward(torch.FloatTensor(s_matrix),torch.FloatTensor(a_matrix))
 		self.loss = self.criterion(y_hat,torch.FloatTensor(y))
 		self.loss.backward()
+		#torch.nn.utils.clip_grad_norm_([x for x in self.params_dic], 2.5)
 		self.optimizer.step()
 		self.optimizer.zero_grad()
 		utils_for_q_learning.sync_networks(target = target_Q, online = self, alpha = params['target_network_learning_rate'], copy = False)
@@ -180,7 +206,7 @@ if __name__=='__main__':
 	utils_for_q_learning.action_checker(env)
 	Q_object = Net(params,env,state_size=len(s0),action_size=len(env.action_space.low))
 	Q_object_target = Net(params,env,state_size=len(s0),action_size=len(env.action_space.low))
-	utils_for_q_learning.sync_networks(target = Q_object_target, online = Q_object, alpha = params['target_network_learning_rate'],copy = True)
+	utils_for_q_learning.sync_networks(target = Q_object_target, online = Q_object, alpha = params['target_network_learning_rate'], copy = True)
 
 	G_li=[]
 	for episode in range(params['max_episode']):
