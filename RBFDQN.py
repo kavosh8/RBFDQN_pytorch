@@ -164,6 +164,9 @@ class Net(nn.Module):
 
 		if train_or_test=='train' and random.random() < epsilon:
 			a = self.env.action_space.sample()
+			print(a)
+			print(type(a))
+			assert False
 			return a.tolist()
 		else:
 			s_matrix = numpy.array(s).reshape(1,self.state_size)
@@ -224,6 +227,9 @@ if __name__=='__main__':
 	for episode in range(params['max_episode']):
 		#train policy with exploration
 		s,done=env.reset(),False
+		#print(s)
+		#print(type(s))
+		#assert False
 		while done==False:
 			a=Q_object.e_greedy_policy(s,episode+1,'train')
 			#print(s,a)

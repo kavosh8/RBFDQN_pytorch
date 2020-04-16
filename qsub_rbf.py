@@ -15,7 +15,7 @@ if not os.path.exists('pbs_files'):
 	os.makedirs('pbs_files')
 
 min_seed=0
-max_seed=1
+max_seed=20
 
 for seed_num in range(min_seed,max_seed):
 	for domain in range(9):
