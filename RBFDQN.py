@@ -9,6 +9,11 @@ import torch.optim as optim
 import numpy
 
 def rbf_function(centroid_locations, action, beta, N):
+	'''
+		given batch size * N centroids * size of each centroid
+		and batch size * size of each action, determine the weight of
+		each centroid for the action 
+	'''
     centroid_locations_squeezed = [l.unsqueeze(1) for l in centroid_locations]
     centroid_locations_cat = torch.cat(centroid_locations_squeezed, dim=1)
     action_unsqueezed = action.unsqueeze(1)
@@ -100,6 +105,23 @@ class Net(nn.Module):
 		index_star = indices.data.numpy()[0]
 		a_star = list(all_centroids[index_star].data.numpy()[0])
 		return Q_star, a_star
+	
+	def get_best_centroid_batch(self, s, maxOrmin='max'):
+		'''
+			given a batch of states s
+			determine max_{a} Q(s,a)
+		'''
+		all_centroids = self.get_all_centroids(s)
+		values = self.get_centroid_values(s)
+		li=[]
+		for i in range(self.N):
+			weights = rbf_function(all_centroids, all_centroids[i], self.beta, self.N)
+			temp = torch.sum(torch.mul(weights,values),dim=1,keepdim=True)
+			li.append(temp)
+		allQ=torch.cat(li,dim=1)
+		best,_ = allQ.max(1)
+		return best.data.numpy()
+
 
 	def e_greedy_policy(self,s,episode,train_or_test):
 		epsilon=1./numpy.power(episode,1./self.params['policy_parameter'])
@@ -131,12 +153,10 @@ class Net(nn.Module):
 		r_matrix=numpy.clip(r_matrix,a_min=-self.params['reward_clip'],a_max=self.params['reward_clip'])
 		sp_matrix=numpy.array(sp_li).reshape(params['batch_size'],self.state_size)
 		done_matrix=numpy.array(done_li).reshape(params['batch_size'],1)
-		Q_star_li=[]
-		for sp in sp_matrix:
-			Q_star, _=target_Q.get_best_centroid(torch.FloatTensor(sp.reshape(1,-1)))
-			Q_star_li.append(Q_star)
-		next_q_star_matrix = numpy.array(Q_star_li).reshape(params['batch_size'],1)
-		y=r_matrix+self.params['gamma']*(1-done_matrix)*next_q_star_matrix
+		Q_star = target_Q.get_best_centroid_batch(torch.FloatTensor(sp_matrix))
+		Q_star = Q_star.reshape((params['batch_size'],-1))
+		#print(Q_star.shape)
+		y=r_matrix+self.params['gamma']*(1-done_matrix)*Q_star
 
 		self.optimizer.zero_grad()
 		y_hat = self.forward(torch.FloatTensor(s_matrix),torch.FloatTensor(a_matrix))
@@ -160,7 +180,6 @@ if __name__=='__main__':
 	utils_for_q_learning.action_checker(env)
 	Q_object = Net(params,env,state_size=len(s0),action_size=len(env.action_space.low))
 	Q_object_target = Net(params,env,state_size=len(s0),action_size=len(env.action_space.low))
-	print("now sync networks ... ")
 	utils_for_q_learning.sync_networks(target = Q_object_target, online = Q_object, alpha = params['target_network_learning_rate'],copy = True)
 
 	G_li=[]
