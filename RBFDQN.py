@@ -8,7 +8,7 @@ import torch.nn.functional as F
 import torch.optim as optim
 import numpy
 
-def rbf_function_single(centroid_locations, beta, N):
+def rbf_function_single(centroid_locations, beta, N, norm_smoothing):
 	'''
 		no batch
 		given N centroids * size of each centroid
@@ -20,7 +20,13 @@ def rbf_function_single(centroid_locations, beta, N):
 		centroid_i = centroid_locations_cat[i,:].unsqueeze(0)
 		centroid_i = torch.cat([centroid_i for _ in range(N)],dim=0)
 		diff_i = centroid_locations_cat - centroid_i
-		diff_norm_i = torch.norm(diff_i,p=2,dim=1)
+		#diff_norm_i = torch.norm(diff_i,p=2,dim=1)
+		#print(diff_norm_i)
+		diff_norm_i = diff_i**2
+		diff_norm_i = torch.sum(diff_norm_i, dim=1)
+		diff_norm_i = diff_norm_i + norm_smoothing
+		diff_norm_i = torch.sqrt(diff_norm_i)
+
 		diff_norm_smoothed_negated_i = diff_norm_i * beta * -1
 		diff_norm_smoothed_negated_i = diff_norm_smoothed_negated_i.unsqueeze(0)
 		diff_norm_smoothed_negated.append(diff_norm_smoothed_negated_i)
@@ -29,7 +35,7 @@ def rbf_function_single(centroid_locations, beta, N):
 	weights = F.softmax(diff_norm_smoothed_negated, dim=1)
 	return weights
 
-def rbf_function(centroid_locations, action, beta, N):
+def rbf_function(centroid_locations, action, beta, N, norm_smoothing):
 	'''
 		given batch size * N centroids * size of each centroid
 		and batch size * size of each action, determine the weight of
@@ -40,7 +46,12 @@ def rbf_function(centroid_locations, action, beta, N):
 	action_unsqueezed = action.unsqueeze(1)
 	action_cat = torch.cat([action_unsqueezed for _ in range(N)], dim=1)
 	diff = centroid_locations_cat - action_cat
-	diff_norm = torch.norm(diff,p=2,dim=2)
+	#diff_norm = torch.norm(diff,p=2,dim=2)
+	diff_norm = diff**2
+	diff_norm = torch.sum(diff_norm, dim=2)
+	diff_norm = diff_norm + norm_smoothing
+	diff_norm = torch.sqrt(diff_norm)
+
 	diff_norm_smoothed_negated = diff_norm * beta * -1
 	output = F.softmax(diff_norm_smoothed_negated, dim=1)
 	return output 
@@ -94,7 +105,7 @@ class Net(nn.Module):
 	def forward(self, s, a):
 		centroid_values = self.get_centroid_values(s)
 		centroid_locations = self.get_all_centroids(s)
-		centroid_weights = rbf_function(centroid_locations, a, self.beta, self.N)
+		centroid_weights = rbf_function(centroid_locations, a, self.beta, self.N, self.params['norm_smoothing'])
 		output = torch.mul(centroid_weights,centroid_values)
 		output = output.sum(1,keepdim=True)
 		return output
@@ -117,7 +128,7 @@ class Net(nn.Module):
 	def get_best_centroid(self, s, maxOrmin='max'):
 		all_centroids = self.get_all_centroids(s)
 		all_centroids_matrix = torch.cat(all_centroids, dim=0)
-		weights = rbf_function_single(all_centroids, self.beta, self.N)
+		weights = rbf_function_single(all_centroids, self.beta, self.N, self.params['norm_smoothing'])
 		values = self.get_centroid_values(s)
 		values = torch.transpose(values, 0, 1)
 		temp = torch.mm(weights,values)
@@ -140,7 +151,7 @@ class Net(nn.Module):
 		li=[]
 		for i in range(self.N):
 			#print(all_centroids[i].shape)
-			weights = rbf_function(all_centroids, all_centroids[i], self.beta, self.N)
+			weights = rbf_function(all_centroids, all_centroids[i], self.beta, self.N, self.params['norm_smoothing'])
 			temp = torch.sum(torch.mul(weights,values), dim=1, keepdim=True)
 			li.append(temp)
 		allQ=torch.cat(li,dim=1)
@@ -186,7 +197,7 @@ class Net(nn.Module):
 		self.optimizer.zero_grad()
 		y_hat = self.forward(torch.FloatTensor(s_matrix),torch.FloatTensor(a_matrix))
 		l = self.loss = self.criterion(y_hat,torch.FloatTensor(y))
-		print("loss: ",l)
+		#print("loss: ",l)
 		self.loss.backward()
 		#torch.nn.utils.clip_grad_norm_([x for x in self.params_dic], 2.5)
 		self.optimizer.step()
