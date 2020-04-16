@@ -196,13 +196,16 @@ class Net(nn.Module):
 
 		self.optimizer.zero_grad()
 		y_hat = self.forward(torch.FloatTensor(s_matrix),torch.FloatTensor(a_matrix))
-		l = self.loss = self.criterion(y_hat,torch.FloatTensor(y))
+		self.loss = self.criterion(y_hat,torch.FloatTensor(y))
 		#print("loss: ",l)
 		self.loss.backward()
 		#torch.nn.utils.clip_grad_norm_([x for x in self.params_dic], 2.5)
 		self.optimizer.step()
 		self.optimizer.zero_grad()
-		utils_for_q_learning.sync_networks(target = target_Q, online = self, alpha = params['target_network_learning_rate'], copy = False)
+		utils_for_q_learning.sync_networks(target = target_Q,
+										   online = self, 
+										   alpha = params['target_network_learning_rate'], 
+										   copy = False)
 
 if __name__=='__main__':
 	hyper_parameter_name=sys.argv[1]
