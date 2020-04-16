@@ -14,15 +14,15 @@ def rbf_function(centroid_locations, action, beta, N):
 		and batch size * size of each action, determine the weight of
 		each centroid for the action 
 	'''
-    centroid_locations_squeezed = [l.unsqueeze(1) for l in centroid_locations]
-    centroid_locations_cat = torch.cat(centroid_locations_squeezed, dim=1)
-    action_unsqueezed = action.unsqueeze(1)
-    action_cat = torch.cat([action_unsqueezed for _ in range(N)], dim=1)
-    diff = centroid_locations_cat - action_cat
-    diff_norm = torch.norm(diff,p=2,dim=2)
-    diff_norm_smoothed_negated = diff_norm * beta * -1
-    output = F.softmax(diff_norm_smoothed_negated, dim=1)
-    return output 
+	centroid_locations_squeezed = [l.unsqueeze(1) for l in centroid_locations]
+	centroid_locations_cat = torch.cat(centroid_locations_squeezed, dim=1)
+	action_unsqueezed = action.unsqueeze(1)
+	action_cat = torch.cat([action_unsqueezed for _ in range(N)], dim=1)
+	diff = centroid_locations_cat - action_cat
+	diff_norm = torch.norm(diff,p=2,dim=2)
+	diff_norm_smoothed_negated = diff_norm * beta * -1
+	output = F.softmax(diff_norm_smoothed_negated, dim=1)
+	return output 
 
 class Net(nn.Module):
 	def __init__(self, params, env, state_size, action_size):
