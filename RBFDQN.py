@@ -164,9 +164,6 @@ class Net(nn.Module):
 
 		if train_or_test=='train' and random.random() < epsilon:
 			a = self.env.action_space.sample()
-			print(a)
-			print(type(a))
-			assert False
 			return a.tolist()
 		else:
 			s_matrix = numpy.array(s).reshape(1,self.state_size)
