@@ -185,7 +185,8 @@ class Net(nn.Module):
 
 		self.optimizer.zero_grad()
 		y_hat = self.forward(torch.FloatTensor(s_matrix),torch.FloatTensor(a_matrix))
-		self.loss = self.criterion(y_hat,torch.FloatTensor(y))
+		l = self.loss = self.criterion(y_hat,torch.FloatTensor(y))
+		print("loss: ",l)
 		self.loss.backward()
 		#torch.nn.utils.clip_grad_norm_([x for x in self.params_dic], 2.5)
 		self.optimizer.step()
@@ -214,7 +215,7 @@ if __name__=='__main__':
 		s,done=env.reset(),False
 		while done==False:
 			a=Q_object.e_greedy_policy(s,episode+1,'train')
-			print(s,a)
+			#print(s,a)
 			sp,r,done,_=env.step(numpy.array(a))
 			Q_object.buffer_object.append(s,a,r,done,sp)
 			s=sp
@@ -227,7 +228,7 @@ if __name__=='__main__':
 		s,t,G,done=env.reset(),0,0,False
 		while done==False:
 			a=Q_object.e_greedy_policy(s,episode+1,'test')
-			print(episode, t , s , a)
+			#print(episode, t , s , a)
 			sp,r,done,_=env.step(numpy.array(a))
 			s,t,G=sp,t+1,G+r
 		print("in episode {} we collected return {} in {} timesteps".format(episode,G,t))
