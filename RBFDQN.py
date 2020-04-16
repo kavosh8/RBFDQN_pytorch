@@ -227,6 +227,7 @@ if __name__=='__main__':
 		s,t,G,done=env.reset(),0,0,False
 		while done==False:
 			a=Q_object.e_greedy_policy(s,episode+1,'test')
+			print(s,a)
 			sp,r,done,_=env.step(numpy.array(a))
 			s,t,G=sp,t+1,G+r
 		print("in episode {} we collected return {} in {} timesteps".format(episode,G,t))
