@@ -214,7 +214,7 @@ if __name__=='__main__':
 		s,done=env.reset(),False
 		while done==False:
 			a=Q_object.e_greedy_policy(s,episode+1,'train')
-			sp,r,done,_=env.step(numpy.array(a))
+			sp,r,done,_=env.step(a)
 			Q_object.buffer_object.append(s,a,r,done,sp)
 			s=sp
 
@@ -226,7 +226,7 @@ if __name__=='__main__':
 		s,t,G,done=env.reset(),0,0,False
 		while done==False:
 			a=Q_object.e_greedy_policy(s,episode+1,'test')
-			sp,r,done,_=env.step(numpy.array(a))
+			sp,r,done,_=env.step(a)
 			s,t,G=sp,t+1,G+r
 		print("in episode {} we collected return {} in {} timesteps".format(episode,G,t))
 		G_li.append(G)
