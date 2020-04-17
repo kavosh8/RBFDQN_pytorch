@@ -97,9 +97,13 @@ class Net(nn.Module):
 		
 		self.params_dic.append({'params': self.value_side3_parameters, 'lr': self.params['learning_rate']})
 		self.params_dic.append({'params': self.value_side4_parameters, 'lr': self.params['learning_rate']})
-		self.params_dic.append({'params': self.location_side1.parameters(), 'lr': self.params['learning_rate_location_side']}) 
+		self.params_dic.append({'params': self.location_side1.parameters(),
+								'lr': self.params['learning_rate_location_side'],
+								'weight_decay': self.params['l2']}) 
 		for i in range(self.N):
-		    self.params_dic.append({'params': self.location_side2[i].parameters(), 'lr': self.params['learning_rate_location_side']}) 
+		    self.params_dic.append({'params': self.location_side2[i].parameters(), 
+		    	'lr': self.params['learning_rate_location_side'],'weight_decay': self.params['l2']})
+		    	
 		if self.params['optimizer']=='RMSprop':
 			self.optimizer = optim.RMSprop(self.params_dic)
 		elif self.params['optimizer']=='Adam':
@@ -203,7 +207,7 @@ class Net(nn.Module):
 		self.loss = self.criterion(y_hat,torch.FloatTensor(y))
 		#print("loss: ",l)
 		self.loss.backward()
-		#torch.nn.utils.clip_grad_norm_([x for x in self.params_dic], 2.5)
+		torch.nn.utils.clip_grad_norm_(self.parameters(), 2.5)
 		self.optimizer.step()
 		self.optimizer.zero_grad()
 		utils_for_q_learning.sync_networks(target = target_Q,
@@ -244,7 +248,11 @@ if __name__=='__main__':
 		#now update the Q network
 		for _ in range(params['updates_per_episode']):
 			Q_object.update(Q_object_target)
-
+		
+		#centroids = Q_object.get_all_centroids(torch.FloatTensor([0,0,0]))
+		#print([ c.data.numpy()[0] for c in centroids])
+		#assert False
+		
 		#test the learned policy, without performing any exploration
 		s,t,G,done=env.reset(),0,0,False
 		while done==False:

@@ -18,3 +18,4 @@ updates_per_episode,100,integer
 updates_per_batch,1,integer
 optimizer,RMSprop,string
 dropout_rate,0.4,float
+l2,0.1,float
