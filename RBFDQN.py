@@ -97,10 +97,13 @@ class Net(nn.Module):
 		
 		self.params_dic.append({'params': self.value_side3_parameters, 'lr': self.params['learning_rate']})
 		self.params_dic.append({'params': self.value_side4_parameters, 'lr': self.params['learning_rate']})
-		self.params_dic.append({'params': self.location_side1.parameters(), 'lr': self.params['learning_rate']}) 
+		self.params_dic.append({'params': self.location_side1.parameters(), 'lr': self.params['learning_rate_location_side']}) 
 		for i in range(self.N):
-		    self.params_dic.append({'params': self.location_side2[i].parameters(), 'lr': self.params['learning_rate']}) 
-		self.optimizer = optim.RMSprop(self.params_dic)
+		    self.params_dic.append({'params': self.location_side2[i].parameters(), 'lr': self.params['learning_rate_location_side']}) 
+		if self.params['optimizer']=='RMSprop':
+			self.optimizer = optim.RMSprop(self.params_dic)
+		elif self.params['optimizer']=='Adam':
+			self.optimizer = optim.Adam(self.params_dic)
 
 	def forward(self, s, a):
 		centroid_values = self.get_centroid_values(s)
