@@ -121,8 +121,9 @@ class Net(nn.Module):
 		return centroid_values
 
 	def get_all_centroids(self, s):
-		temp = F.relu(self.location_side1(s))
-		temp = self.drop(temp)
+		temp = self.location_side1(s)
+		#temp = F.relu(self.location_side1(s))
+		#temp = self.drop(temp)
 		centroid_locations = []
 		for i in range(self.N):
 		    centroid_locations.append( self.max_a*torch.tanh(self.location_side2[i](temp)) )
