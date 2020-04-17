@@ -10,7 +10,7 @@ gamma,0.99,float
 batch_size,256,integer
 num_points,30,integer
 reward_clip,20,float
-temperature,2,float
+temperature,3,float
 policy_type,e_greedy,string
 policy_parameter,2.75,float
 norm_smoothing,0.00001,float
