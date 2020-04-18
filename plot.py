@@ -34,7 +34,7 @@ for problem in range(9):
 	plt.subplot(3,3,problem+1)
 	print(problems_name[problem])
 	#for setting in range(10):
-	for setting in [0,1,2,3,5]:
+	for setting in [0,1,2,3,4]:
 		hyper_parameter_name=10*problem+setting
 		acceptable_len=00
 		li=[]
