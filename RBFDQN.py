@@ -84,11 +84,11 @@ class Net(nn.Module):
 
 		self.drop = nn.Dropout(p=self.params['dropout_rate'])
 
-		self.location_side1 = nn.Linear(self.state_size, self.params['layer_size'])
-		self.location_side2 = nn.Linear(self.params['layer_size'], self.params['layer_size'])
-		self.location_side3 = []
+		#self.location_side1 = nn.Linear(self.state_size, self.params['layer_size'])
+		#self.location_side2 = nn.Linear(self.params['layer_size'], self.params['layer_size'])
+		self.location_side1 = []
 		for _ in range(self.N):
-		    self.location_side3.append(nn.Linear(self.params['layer_size'], self.action_size))
+		    self.location_side1.append(nn.Linear(self.state_size, self.action_size))
 		self.criterion = nn.MSELoss()
 
 
@@ -98,15 +98,16 @@ class Net(nn.Module):
 		
 		self.params_dic.append({'params': self.value_side3_parameters, 'lr': self.params['learning_rate']})
 		self.params_dic.append({'params': self.value_side4_parameters, 'lr': self.params['learning_rate']})
-
+		'''
 		self.params_dic.append({'params': self.location_side1.parameters(),
 								'lr': self.params['learning_rate_location_side'],
 								'weight_decay': self.params['l2']}) 
 		self.params_dic.append({'params': self.location_side2.parameters(),
 								'lr': self.params['learning_rate_location_side'],
 								'weight_decay': self.params['l2']}) 	
+		'''
 		for i in range(self.N):
-		    self.params_dic.append({'params': self.location_side3[i].parameters(), 
+		    self.params_dic.append({'params': self.location_side1[i].parameters(), 
 		    	'lr': self.params['learning_rate_location_side'],'weight_decay': self.params['l2']})
 		    	
 		if self.params['optimizer']=='RMSprop':
@@ -131,12 +132,12 @@ class Net(nn.Module):
 
 	def get_all_centroids(self, s):
 		#temp = self.location_side1(s)
-		temp = F.relu(self.location_side1(s))
-		temp = F.relu(self.location_side2(temp))
-		temp = self.drop(temp)
+		#temp = F.relu(self.location_side1(s))
+		#temp = F.relu(self.location_side2(temp))
+		#temp = self.drop(temp)
 		centroid_locations = []
 		for i in range(self.N):
-		    centroid_locations.append( self.max_a*torch.tanh(self.location_side3[i](temp)) )
+		    centroid_locations.append( self.max_a*torch.tanh(self.location_side1[i](s)) )
 		return centroid_locations
 
 	def get_best_centroid(self, s, maxOrmin='max'):
