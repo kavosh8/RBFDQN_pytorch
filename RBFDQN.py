@@ -25,7 +25,7 @@ def rbf_function_single(centroid_locations, beta, N, norm_smoothing):
 		diff_norm_i = diff_i**2
 		diff_norm_i = torch.sum(diff_norm_i, dim=1)
 		diff_norm_i = diff_norm_i + norm_smoothing
-		#diff_norm_i = torch.sqrt(diff_norm_i)
+		diff_norm_i = torch.sqrt(diff_norm_i)
 
 		diff_norm_smoothed_negated_i = diff_norm_i * beta * -1
 		diff_norm_smoothed_negated_i = diff_norm_smoothed_negated_i.unsqueeze(0)
@@ -52,7 +52,7 @@ def rbf_function(centroid_locations, action, beta, N, norm_smoothing):
 	diff_norm = diff**2
 	diff_norm = torch.sum(diff_norm, dim=2)
 	diff_norm = diff_norm + norm_smoothing
-	#diff_norm = torch.sqrt(diff_norm)
+	diff_norm = torch.sqrt(diff_norm)
 
 	diff_norm_smoothed_negated = diff_norm * beta * -1
 	output = F.softmax(diff_norm_smoothed_negated, dim=1)
