@@ -90,7 +90,7 @@ class Net(nn.Module):
 		self.location_side2 = []
 		for _ in range(self.N):
 			temp = nn.Linear(self.params['layer_size'], self.action_size)
-			nn.init.uniform_(temp.bias,a = -2.0, b = +2.0)
+			#nn.init.uniform_(temp.bias,a = -2.0, b = +2.0)
 			self.location_side2.append(temp)
 		self.criterion = nn.MSELoss()
 
