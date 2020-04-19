@@ -173,8 +173,10 @@ class Net(nn.Module):
 			a = self.env.action_space.sample()
 			return a.tolist()
 		else:
+			self.eval()
 			s_matrix = numpy.array(s).reshape(1,self.state_size)
 			q,a = self.get_best_centroid( torch.FloatTensor(s_matrix))
+			self.train()
 			return a
 
 	def update(self, target_Q):
@@ -197,6 +199,8 @@ class Net(nn.Module):
 		sp_matrix=numpy.array(sp_li).reshape(params['batch_size'],self.state_size)
 		done_matrix=numpy.array(done_li).reshape(params['batch_size'],1)
 		Q_star = target_Q.get_best_centroid_batch(torch.FloatTensor(sp_matrix))
+		Q_star = target_Q.get_best_centroid_batch(torch.FloatTensor(sp_matrix))
+		#assert False
 		Q_star = Q_star.reshape((params['batch_size'],-1))
 		#print(Q_star.shape)
 		y=r_matrix+self.params['gamma']*(1-done_matrix)*Q_star
@@ -228,6 +232,7 @@ if __name__=='__main__':
 	utils_for_q_learning.action_checker(env)
 	Q_object = Net(params,env,state_size=len(s0),action_size=len(env.action_space.low))
 	Q_object_target = Net(params,env,state_size=len(s0),action_size=len(env.action_space.low))
+	Q_object_target.eval()
 	utils_for_q_learning.sync_networks(target = Q_object_target, online = Q_object, alpha = params['target_network_learning_rate'], copy = True)
 
 	G_li=[]
