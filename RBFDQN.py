@@ -33,6 +33,8 @@ def rbf_function_single(centroid_locations, beta, N, norm_smoothing):
 
 	diff_norm_smoothed_negated = torch.cat(diff_norm_smoothed_negated,dim=0)
 	weights = F.softmax(diff_norm_smoothed_negated, dim=1)
+	#print(torch.max(weights))
+	#assert False
 	return weights
 
 def rbf_function(centroid_locations, action, beta, N, norm_smoothing):
@@ -87,7 +89,9 @@ class Net(nn.Module):
 		self.location_side1 = nn.Linear(self.state_size, self.params['layer_size'])
 		self.location_side2 = []
 		for _ in range(self.N):
-		    self.location_side2.append(nn.Linear(self.params['layer_size'], self.action_size))
+			temp = nn.Linear(self.params['layer_size'], self.action_size)
+			nn.init.uniform_(temp.bias,a = -2.0, b = +2.0)
+			self.location_side2.append(temp)
 		self.criterion = nn.MSELoss()
 
 

@@ -2,8 +2,8 @@ env_name,BipedalWalker-v2,string
 max_episode,1000,integer
 num_layers,3,integer
 layer_size,512,integer
-learning_rate,0.0005,float
-learning_rate_location_side,0.0005,float
+learning_rate,0.001,float
+learning_rate_location_side,0.001,float
 target_network_learning_rate,0.005,float
 max_buffer_size,500000,integer
 gamma,0.99,float
