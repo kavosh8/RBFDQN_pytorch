@@ -58,4 +58,5 @@ def set_random_seed(meta_params):
 	import random
 	random.seed(seed_number)
 	import torch
-	torch.manual_seed(7)
+	torch.manual_seed(seed_number)
+	meta_params['env'].seed(seed_number)

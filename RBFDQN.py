@@ -33,8 +33,6 @@ def rbf_function_single(centroid_locations, beta, N, norm_smoothing):
 
 	diff_norm_smoothed_negated = torch.cat(diff_norm_smoothed_negated,dim=0)
 	weights = F.softmax(diff_norm_smoothed_negated, dim=1)
-	#print(torch.max(weights))
-	#assert False
 	return weights
 
 def rbf_function(centroid_locations, action, beta, N, norm_smoothing):
@@ -87,11 +85,17 @@ class Net(nn.Module):
 		self.drop = nn.Dropout(p=0.4)
 
 		self.location_side1 = nn.Linear(self.state_size, self.params['layer_size'])
+		torch.nn.init.xavier_uniform_(self.location_side1.weight)
+		torch.nn.init.zeros_(self.location_side1.bias)
+
 		self.location_side2 = []
 		for _ in range(self.N):
 			temp = nn.Linear(self.params['layer_size'], self.action_size)
+			temp.weight.data.uniform_(-.1, .1)
+			temp.bias.data.uniform_(-1, +1)
 			#nn.init.uniform_(temp.bias,a = -2.0, b = +2.0)
 			self.location_side2.append(temp)
+			
 		self.criterion = nn.MSELoss()
 
 
@@ -134,8 +138,9 @@ class Net(nn.Module):
 
 	def get_best_centroid(self, s, maxOrmin='max'):
 		all_centroids = self.get_all_centroids(s)
-		all_centroids_matrix = torch.cat(all_centroids, dim=0)
 		weights = rbf_function_single(all_centroids, self.beta, self.N, self.params['norm_smoothing'])
+		#print(weights)
+		#assert False
 		values = self.get_centroid_values(s)
 		values = torch.transpose(values, 0, 1)
 		temp = torch.mm(weights,values)
@@ -198,21 +203,23 @@ class Net(nn.Module):
 		r_matrix=numpy.clip(r_matrix,a_min=-self.params['reward_clip'],a_max=self.params['reward_clip'])
 		sp_matrix=numpy.array(sp_li).reshape(params['batch_size'],self.state_size)
 		done_matrix=numpy.array(done_li).reshape(params['batch_size'],1)
+		#self.train()
 		Q_star = target_Q.get_best_centroid_batch(torch.FloatTensor(sp_matrix))
-		Q_star = target_Q.get_best_centroid_batch(torch.FloatTensor(sp_matrix))
+		#print(Q_star[0])
+		#Q_star = target_Q.get_best_centroid_batch(torch.FloatTensor(sp_matrix))
+		#print(Q_star[0])
+		#assert False
 		#assert False
 		Q_star = Q_star.reshape((params['batch_size'],-1))
 		#print(Q_star.shape)
 		y=r_matrix+self.params['gamma']*(1-done_matrix)*Q_star
-
-		self.optimizer.zero_grad()
+		
 		y_hat = self.forward(torch.FloatTensor(s_matrix),torch.FloatTensor(a_matrix))
-		self.loss = self.criterion(y_hat,torch.FloatTensor(y))
-		#print("loss: ",l)
-		self.loss.backward()
-		#torch.nn.utils.clip_grad_norm_([x for x in self.params_dic], 2.5)
+		loss = self.criterion(y_hat,torch.FloatTensor(y))
+		self.zero_grad()
+		loss.backward()
 		self.optimizer.step()
-		self.optimizer.zero_grad()
+		self.zero_grad()
 		utils_for_q_learning.sync_networks(target = target_Q,
 										   online = self, 
 										   alpha = params['target_network_learning_rate'], 

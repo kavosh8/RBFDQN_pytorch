@@ -24,7 +24,7 @@ def smooth(li):
 problems_name=['Pendulum','LunarLander','Bipedal','Ant','Cheetah',
 			   'Hopper','InvertedDoublePendulum','InvertedPendulum',
 			   'Reacher']
-ylim_down = [-1500,-350,-100,-500,-500,-500,0,0,-50]
+ylim_down = [-1500,-350,-100,-500,-500,-500,0,0,-80]
 ylim_up = [-100,235,300,3000,8000,3000,9350,1000,-4]
 #y_ticks = [[-1000,-150],[-200,220],[0,250],[0,2500],[0,7500],[0,3000],[0,9000],[0,1000],[-50,-4]]
 #setting_li=[0]
@@ -33,7 +33,7 @@ ylim_up = [-100,235,300,3000,8000,3000,9350,1000,-4]
 for problem in range(9):
 	plt.subplot(3,3,problem+1)
 	print(problems_name[problem])
-	for setting in [0,6]:
+	for setting in [0,1]:
 		hyper_parameter_name=10*problem+setting
 		acceptable_len=00
 		li=[]
