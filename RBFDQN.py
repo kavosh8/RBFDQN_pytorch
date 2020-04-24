@@ -95,7 +95,7 @@ class Net(nn.Module):
 			temp.bias.data.uniform_(-1, +1)
 			#nn.init.uniform_(temp.bias,a = -2.0, b = +2.0)
 			self.location_side2.append(temp)
-			
+		self.location_side2 = torch.nn.ModuleList(self.location_side2)
 		self.criterion = nn.MSELoss()
 
 
