@@ -88,11 +88,13 @@ class Net(nn.Module):
 		torch.nn.init.xavier_uniform_(self.location_side1.weight)
 		torch.nn.init.zeros_(self.location_side1.bias)
 
-		###
-		self.location_side1point5 = nn.Linear(self.state_size, self.params['layer_size'])
-		torch.nn.init.xavier_uniform_(self.location_side1point5.weight)
-		torch.nn.init.zeros_(self.location_side1point5.bias)
-		###
+		if self.params['num_layers_action_side'] == 2:
+			###
+			self.location_side1point5 = nn.Linear(self.params['layer_size'], self.params['layer_size'])
+			torch.nn.init.xavier_uniform_(self.location_side1point5.weight)
+			torch.nn.init.zeros_(self.location_side1point5.bias)
+			###
+
 		self.location_side2 = []
 		for _ in range(self.N):
 			temp = nn.Linear(self.params['layer_size'], self.action_size)
@@ -111,13 +113,16 @@ class Net(nn.Module):
 		self.params_dic.append({'params': self.value_side3_parameters, 'lr': self.params['learning_rate']})
 		self.params_dic.append({'params': self.value_side4_parameters, 'lr': self.params['learning_rate']})
 		self.params_dic.append({'params': self.location_side1.parameters(), 'lr': self.params['learning_rate_location_side']})
-		###
-		self.params_dic.append({'params': self.location_side1point5.parameters(), 'lr': self.params['learning_rate_location_side']}) 
-		###
+
+		if self.params['num_layers_action_side'] == 2:
+			###
+			self.params_dic.append({'params': self.location_side1point5.parameters(), 'lr': self.params['learning_rate_location_side']}) 
+			###
+
 		for i in range(self.N):
 		    self.params_dic.append({'params': self.location_side2[i].parameters(), 'lr': self.params['learning_rate_location_side']}) 
 		if self.params['optimizer']=='RMSprop':
-			self.optimizer = optim.RMSprop(self.params_dic)
+			self.optimizer = optim.RMSprop(self.params_dic, weight_decay=self.params['weight_decay'])
 		elif self.params['optimizer']=='Adam':
 			self.optimizer = optim.Adam(self.params_dic)
 
@@ -139,10 +144,13 @@ class Net(nn.Module):
 	def get_all_centroids(self, s):
 		temp = F.relu(self.location_side1(s))
 		temp = self.drop(temp)
-		###
-		temp = F.relu(self.location_side1point5(s))
-		temp = self.drop(temp)
-		###
+
+		if self.params['num_layers_action_side'] == 2:
+			###
+			temp = F.relu(self.location_side1point5(temp))
+			temp = self.drop(temp)
+			###
+
 		centroid_locations = []
 		for i in range(self.N):
 		    centroid_locations.append( self.max_a*torch.tanh(self.location_side2[i](temp)) )
