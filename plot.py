@@ -37,7 +37,7 @@ for problem in range(9):
 		hyper_parameter_name=10*problem+setting
 		acceptable_len=00
 		li=[]
-		for seed_num in range(9):
+		for seed_num in range(2):
 			try:
 				temp=numpy.loadtxt("rbf_results/"+str(hyper_parameter_name)+"/"+str(seed_num)+".txt")
 				#print(hyper_parameter_name,numpy.mean(temp[-10:]),len(temp))
