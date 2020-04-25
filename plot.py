@@ -33,11 +33,11 @@ ylim_up = [-100,235,300,3000,8000,3000,9350,1000,-4]
 for problem in range(9):
 	plt.subplot(3,3,problem+1)
 	print(problems_name[problem])
-	for setting in [0,8]:
+	for setting in range(7):
 		hyper_parameter_name=10*problem+setting
 		acceptable_len=00
 		li=[]
-		for seed_num in range(5):
+		for seed_num in range(8):
 			try:
 				temp=numpy.loadtxt("rbf_results/"+str(hyper_parameter_name)+"/"+str(seed_num)+".txt")
 				#print(hyper_parameter_name,numpy.mean(temp[-10:]),len(temp))
@@ -45,9 +45,9 @@ for problem in range(9):
 				if len(temp)>acceptable_len:
 					li.append(temp)
 					#plt.plot(temp)
-					print(hyper_parameter_name,seed_num,numpy.mean(temp[-10:]),len(temp))
+					#print(hyper_parameter_name,seed_num,numpy.mean(temp[-10:]),len(temp))
 			except:
-				print("problem")
+				#print("problem")
 				pass
 		#print([len(x) for x in li])
 		li=truncate(li)

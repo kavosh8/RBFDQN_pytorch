@@ -82,7 +82,7 @@ class Net(nn.Module):
 		self.value_side4 = nn.Linear(self.params['layer_size'], self.N)
 		self.value_side4_parameters = self.value_side4.parameters()
 
-		self.drop = nn.Dropout(p=0.4)
+		self.drop = nn.Dropout(p=self.params['dropout_rate'])
 
 		self.location_side1 = nn.Linear(self.state_size, self.params['layer_size'])
 		torch.nn.init.xavier_uniform_(self.location_side1.weight)
