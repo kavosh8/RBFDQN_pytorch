@@ -198,7 +198,12 @@ class Net(nn.Module):
 			a = self.env.action_space.sample()
 			return a.tolist()
 		else:
-			self.eval()
+			try:
+				if self.params['online_eval']==1:
+					pass
+			except:
+				#print("except target_eval active ...")
+				self.eval()
 			s_matrix = numpy.array(s).reshape(1,self.state_size)
 			q,a = self.get_best_centroid( torch.FloatTensor(s_matrix))
 			self.train()
@@ -259,7 +264,13 @@ if __name__=='__main__':
 	utils_for_q_learning.action_checker(env)
 	Q_object = Net(params,env,state_size=len(s0),action_size=len(env.action_space.low))
 	Q_object_target = Net(params,env,state_size=len(s0),action_size=len(env.action_space.low))
-	Q_object_target.eval()
+	try:
+		if params['target_eval']==1:
+			pass
+	except:
+		print("except target_eval active ...")
+		Q_object_target.eval()
+
 	utils_for_q_learning.sync_networks(target = Q_object_target, online = Q_object, alpha = params['target_network_learning_rate'], copy = True)
 
 	G_li=[]

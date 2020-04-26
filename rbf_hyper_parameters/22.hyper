@@ -19,4 +19,4 @@ updates_per_batch,1,integer
 optimizer,RMSprop,string
 dropout_rate,0.4,float
 num_layers_action_side,1,integer
-weight_decay,0.01,float
+weight_decay,0.00001,float

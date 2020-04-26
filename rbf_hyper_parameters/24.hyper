@@ -18,5 +18,6 @@ updates_per_episode,100,integer
 updates_per_batch,1,integer
 optimizer,RMSprop,string
 dropout_rate,0.4,float
-num_layers_action_side,2,integer
-weight_decay,0.001,float
+num_layers_action_side,1,integer
+weight_decay,0.0,float
+online_eval,1,integer
