@@ -122,7 +122,7 @@ class Net(nn.Module):
 		for i in range(self.N):
 		    self.params_dic.append({'params': self.location_side2[i].parameters(), 'lr': self.params['learning_rate_location_side']}) 
 		if self.params['optimizer']=='RMSprop':
-			self.optimizer = optim.RMSprop(self.params_dic, weight_decay=self.params['weight_decay'])
+			self.optimizer = optim.RMSprop(self.params_dic)
 		elif self.params['optimizer']=='Adam':
 			self.optimizer = optim.Adam(self.params_dic)
 
@@ -198,12 +198,7 @@ class Net(nn.Module):
 			a = self.env.action_space.sample()
 			return a.tolist()
 		else:
-			try:
-				if self.params['online_eval']==1:
-					pass
-			except:
-				#print("except target_eval active ...")
-				self.eval()
+			self.eval()
 			s_matrix = numpy.array(s).reshape(1,self.state_size)
 			q,a = self.get_best_centroid( torch.FloatTensor(s_matrix))
 			self.train()
@@ -264,12 +259,7 @@ if __name__=='__main__':
 	utils_for_q_learning.action_checker(env)
 	Q_object = Net(params,env,state_size=len(s0),action_size=len(env.action_space.low))
 	Q_object_target = Net(params,env,state_size=len(s0),action_size=len(env.action_space.low))
-	try:
-		if params['target_eval']==1:
-			pass
-	except:
-		print("except target_eval active ...")
-		Q_object_target.eval()
+	Q_object_target.eval()
 
 	utils_for_q_learning.sync_networks(target = Q_object_target, online = Q_object, alpha = params['target_network_learning_rate'], copy = True)
 

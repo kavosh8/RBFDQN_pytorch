@@ -1,6 +1,6 @@
 env_name,Ant-v1,string
 max_episode,2000,integer
-num_layers,3,integer
+num_layers,2,integer
 layer_size,512,integer
 learning_rate,0.0001,float
 learning_rate_location_side,0.0001,float
@@ -19,4 +19,3 @@ updates_per_batch,1,integer
 optimizer,RMSprop,string
 dropout_rate,0.4,float
 num_layers_action_side,1,integer
-weight_decay,0.0001,float
