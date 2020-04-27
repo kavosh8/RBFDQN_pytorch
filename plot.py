@@ -33,7 +33,7 @@ ylim_up = [-100,235,300,3000,8000,3000,9350,1000,-4]
 for problem in range(9):
 	plt.subplot(3,3,problem+1)
 	print(problems_name[problem])
-	for setting in [0,9]:
+	for setting in [0]:
 		hyper_parameter_name=10*problem+setting
 		acceptable_len=00
 		li=[]
