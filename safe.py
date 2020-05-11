@@ -307,7 +307,9 @@ if __name__=='__main__':
 			#print(episode, t , s , a)
 			sp,r,done,_=env.step(numpy.array(a))
 			s,t,G=sp,t+1,G+r
+			print("============================================")
 			print(print_contact_info(env))
+			input()
 			env.render()
 		#print(env.env.data.qpos[0])
 		print("in episode {} we collected return {} in {} timesteps".format(episode,G,t))
