@@ -281,17 +281,15 @@ if __name__=='__main__':
 		for _ in range(params['updates_per_episode']):
 			Q_object.update(Q_object_target)
 
-		#test the learned policy, without performing any exploration
-		s,t,G,done=env.reset(),0,0,False
-		while done==False:
-			a=Q_object.e_greedy_policy(s,episode+1,'test')
-			#print(episode, t , s , a)
-			sp,r,done,_=env.step(numpy.array(a))
-			s,t,G=sp,t+1,G+r
-		print("in episode {} we collected return {} in {} timesteps".format(episode,G,t))
-		G_li.append(G)
-		if episode % 10 == 0 and episode>0:	
+		if (episode % 10 == 0) or (episode == params['max_episode'] - 1):
+			temp = []
+			for _ in range(10):
+				s,G,done,t=env.reset(),0,False,0
+				while done==False:
+					a=Q_object.e_greedy_policy(s,episode+1,'test')
+					sp,r,done,_=env.step(numpy.array(a))
+					s,G,t=sp,G+r,t+1
+				temp.append(G)
+			print("after {} episodes, learned policy collects {} average returns".format(episode,numpy.mean(temp)))
+			G_li.append(numpy.mean(temp))	
 			utils_for_q_learning.save(G_li,params,alg)
-			#Q_object.network.save_weights("rbf_policies/"+hyper_parameter_name+"_model.h5")
-
-	utils_for_q_learning.save(G_li,params,alg)
