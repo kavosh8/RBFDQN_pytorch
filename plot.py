@@ -8,11 +8,14 @@ def truncate(li):
 	N=numpy.min([len(x) for x in li])
 	return [l[:N] for l in li]
 def smooth(li):
-	window=10
+	window=2
 	y=li
 	y_smooth=[numpy.mean(y[max(x-window,0):x+window]) for x in range(len(y))]
 	return y_smooth
-
+def compute_fina_mean_and_std(li):
+	li_last = [l[-1] for l in li]
+	print(numpy.mean(li_last))
+	print(numpy.std(li_last)/20)
 #[20,31,40,45]
 #for hyper_parameter_name in ['10','11','12','13','14','15','16','17','lunar_old']:
 #for hyper_parameter_name in [0,1,2,3]:
@@ -30,14 +33,14 @@ ylim_up = [-100,235,300,3000,8000,3000,9350,1000,-4]
 #setting_li=[0]
 #setting_li=[0]+list(range(900,910))
 #setting_li=[0]
-for problem in range(9):
+for problem in range(8):
 	plt.subplot(3,3,problem+1)
 	print(problems_name[problem])
 	for setting in [0]:
 		hyper_parameter_name=10*problem+setting
 		acceptable_len=00
 		li=[]
-		for seed_num in range(10):
+		for seed_num in range(20):
 			try:
 				temp=numpy.loadtxt("rbf_results/"+str(hyper_parameter_name)+"/"+str(seed_num)+".txt")
 				#print(hyper_parameter_name,numpy.mean(temp[-10:]),len(temp))
@@ -45,7 +48,7 @@ for problem in range(9):
 				if len(temp)>acceptable_len:
 					li.append(temp)
 					#plt.plot(temp)
-					#print(hyper_parameter_name,seed_num,numpy.mean(temp[-10:]),len(temp))
+					print(hyper_parameter_name,seed_num,numpy.mean(temp[-10:]),len(temp))
 			except:
 				#print("problem")
 				pass

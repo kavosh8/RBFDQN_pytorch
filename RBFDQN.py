@@ -20,8 +20,6 @@ def rbf_function_single(centroid_locations, beta, N, norm_smoothing):
 		centroid_i = centroid_locations_cat[i,:].unsqueeze(0)
 		centroid_i = torch.cat([centroid_i for _ in range(N)],dim=0)
 		diff_i = centroid_locations_cat - centroid_i
-		#diff_norm_i = torch.norm(diff_i,p=2,dim=1)
-		#print(diff_norm_i)
 		diff_norm_i = diff_i**2
 		diff_norm_i = torch.sum(diff_norm_i, dim=1)
 		diff_norm_i = diff_norm_i + norm_smoothing
@@ -46,12 +44,10 @@ def rbf_function(centroid_locations, action, beta, N, norm_smoothing):
 	action_unsqueezed = action.unsqueeze(1)
 	action_cat = torch.cat([action_unsqueezed for _ in range(N)], dim=1)
 	diff = centroid_locations_cat - action_cat
-	#diff_norm = torch.norm(diff,p=2,dim=2)
 	diff_norm = diff**2
 	diff_norm = torch.sum(diff_norm, dim=2)
 	diff_norm = diff_norm + norm_smoothing
 	diff_norm = torch.sqrt(diff_norm)
-
 	diff_norm_smoothed_negated = diff_norm * beta * -1
 	output = F.softmax(diff_norm_smoothed_negated, dim=1)
 	return output 
@@ -88,13 +84,6 @@ class Net(nn.Module):
 		torch.nn.init.xavier_uniform_(self.location_side1.weight)
 		torch.nn.init.zeros_(self.location_side1.bias)
 
-		if self.params['num_layers_action_side'] == 2:
-			###
-			self.location_side1point5 = nn.Linear(self.params['layer_size'], self.params['layer_size'])
-			torch.nn.init.xavier_uniform_(self.location_side1point5.weight)
-			torch.nn.init.zeros_(self.location_side1point5.bias)
-			###
-
 		self.location_side2 = []
 		for _ in range(self.N):
 			temp = nn.Linear(self.params['layer_size'], self.action_size)
@@ -114,19 +103,14 @@ class Net(nn.Module):
 		self.params_dic.append({'params': self.value_side4_parameters, 'lr': self.params['learning_rate']})
 		self.params_dic.append({'params': self.location_side1.parameters(), 'lr': self.params['learning_rate_location_side']})
 
-		if self.params['num_layers_action_side'] == 2:
-			###
-			self.params_dic.append({'params': self.location_side1point5.parameters(), 'lr': self.params['learning_rate_location_side']}) 
-			###
-
 		for i in range(self.N):
 		    self.params_dic.append({'params': self.location_side2[i].parameters(), 'lr': self.params['learning_rate_location_side']}) 
-		if self.params['optimizer']=='RMSprop':
-			self.optimizer = optim.RMSprop(self.params_dic)
-		elif self.params['optimizer']=='Adam':
-			self.optimizer = optim.Adam(self.params_dic)
+		self.optimizer = optim.RMSprop(self.params_dic)
 
 	def forward(self, s, a):
+		'''
+			given a batch of s,a compute Q(s,a)
+		'''
 		centroid_values = self.get_centroid_values(s)
 		centroid_locations = self.get_all_centroids(s)
 		centroid_weights = rbf_function(centroid_locations, a, self.beta, self.N, self.params['norm_smoothing'])
@@ -135,6 +119,9 @@ class Net(nn.Module):
 		return output
 
 	def get_centroid_values(self, s):
+		'''
+			given a batch of s, get V(s)_i for i in 1 through N
+		'''
 		temp = F.relu(self.value_side1(s))
 		temp = F.relu(self.value_side2(temp))
 		temp = F.relu(self.value_side3(temp))
@@ -145,12 +132,6 @@ class Net(nn.Module):
 		temp = F.relu(self.location_side1(s))
 		temp = self.drop(temp)
 
-		if self.params['num_layers_action_side'] == 2:
-			###
-			temp = F.relu(self.location_side1point5(temp))
-			temp = self.drop(temp)
-			###
-
 		centroid_locations = []
 		for i in range(self.N):
 		    centroid_locations.append( self.max_a*torch.tanh(self.location_side2[i](temp)) )
@@ -159,8 +140,6 @@ class Net(nn.Module):
 	def get_best_centroid(self, s, maxOrmin='max'):
 		all_centroids = self.get_all_centroids(s)
 		weights = rbf_function_single(all_centroids, self.beta, self.N, self.params['norm_smoothing'])
-		#print(weights)
-		#assert False
 		values = self.get_centroid_values(s)
 		values = torch.transpose(values, 0, 1)
 		temp = torch.mm(weights,values)
@@ -223,17 +202,9 @@ class Net(nn.Module):
 		r_matrix=numpy.clip(r_matrix,a_min=-self.params['reward_clip'],a_max=self.params['reward_clip'])
 		sp_matrix=numpy.array(sp_li).reshape(params['batch_size'],self.state_size)
 		done_matrix=numpy.array(done_li).reshape(params['batch_size'],1)
-		#self.train()
 		Q_star = target_Q.get_best_centroid_batch(torch.FloatTensor(sp_matrix))
-		#print(Q_star[0])
-		#Q_star = target_Q.get_best_centroid_batch(torch.FloatTensor(sp_matrix))
-		#print(Q_star[0])
-		#assert False
-		#assert False
 		Q_star = Q_star.reshape((params['batch_size'],-1))
-		#print(Q_star.shape)
 		y=r_matrix+self.params['gamma']*(1-done_matrix)*Q_star
-		
 		y_hat = self.forward(torch.FloatTensor(s_matrix),torch.FloatTensor(a_matrix))
 		loss = self.criterion(y_hat,torch.FloatTensor(y))
 		self.zero_grad()
@@ -265,11 +236,7 @@ if __name__=='__main__':
 
 	G_li=[]
 	for episode in range(params['max_episode']):
-		#train policy with exploration
 		s,done=env.reset(),False
-		#print(s)
-		#print(type(s))
-		#assert False
 		while done==False:
 			a=Q_object.e_greedy_policy(s,episode+1,'train')
 			#print(s,a)
