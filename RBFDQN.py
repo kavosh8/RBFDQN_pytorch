@@ -183,7 +183,7 @@ class Net(nn.Module):
 			self.train()
 			return a
 
-	def update(self, target_Q):
+	def update(self, target_Q, count):
 
 		if len(self.buffer_object.storage)<params['batch_size']:
 			return 0
@@ -211,7 +211,8 @@ class Net(nn.Module):
 		loss.backward()
 		self.optimizer.step()
 		self.zero_grad()
-		utils_for_q_learning.sync_networks(target = target_Q,
+		if count % 2 == 0: #ZZZZZZZZ
+			utils_for_q_learning.sync_networks(target = target_Q,
 										   online = self, 
 										   alpha = params['target_network_learning_rate'], 
 										   copy = False)
@@ -249,8 +250,8 @@ if __name__=='__main__':
 		
 		#now update the Q network
 		loss = []
-		for _ in range(params['updates_per_episode']):
-			temp = Q_object.update(Q_object_target)
+		for count in range(params['updates_per_episode']):
+			temp = Q_object.update(Q_object_target, count)
 			loss.append(temp)
 		#print(loss)
 		loss_li.append(numpy.mean(loss))

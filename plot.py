@@ -38,11 +38,11 @@ colors = ['blue', 'orange','brown','black']
 for problem in range(8):
 	plt.subplot(3,3,problem+1)
 	print(problems_name[problem])
-	for setting in [1,2,3,4]:
+	for setting in [1,2,3]:
 		hyper_parameter_name=10*problem+setting
 		acceptable_len=00
 		li=[]
-		for seed_num in range(10):
+		for seed_num in range(5):
 			try:
 				temp=numpy.loadtxt("rbf_results/"+str(hyper_parameter_name)+"/loss_"+str(seed_num)+".txt")
 				temp=numpy.loadtxt("rbf_results/"+str(hyper_parameter_name)+"/"+str(seed_num)+".txt")
