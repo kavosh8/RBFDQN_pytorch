@@ -186,7 +186,7 @@ class Net(nn.Module):
 	def update(self, target_Q):
 
 		if len(self.buffer_object.storage)<params['batch_size']:
-			return
+			return 0
 		else:
 			pass
 		batch=random.sample(self.buffer_object.storage,params['batch_size'])
@@ -215,6 +215,7 @@ class Net(nn.Module):
 										   online = self, 
 										   alpha = params['target_network_learning_rate'], 
 										   copy = False)
+		return loss.data.numpy()
 
 if __name__=='__main__':
 	hyper_parameter_name=sys.argv[1]
@@ -235,6 +236,7 @@ if __name__=='__main__':
 	utils_for_q_learning.sync_networks(target = Q_object_target, online = Q_object, alpha = params['target_network_learning_rate'], copy = True)
 
 	G_li=[]
+	loss_li = []
 	for episode in range(params['max_episode']):
 		s,done=env.reset(),False
 		while done==False:
@@ -244,9 +246,16 @@ if __name__=='__main__':
 			Q_object.buffer_object.append(s,a,r,done,sp)
 			s=sp
 
+		
 		#now update the Q network
+		loss = []
 		for _ in range(params['updates_per_episode']):
-			Q_object.update(Q_object_target)
+			temp = Q_object.update(Q_object_target)
+			loss.append(temp)
+		#print(loss)
+		loss_li.append(numpy.mean(loss))
+		#print(loss_li)
+
 
 		if (episode % 10 == 0) or (episode == params['max_episode'] - 1):
 			temp = []
@@ -259,4 +268,4 @@ if __name__=='__main__':
 				temp.append(G)
 			print("after {} episodes, learned policy collects {} average returns".format(episode,numpy.mean(temp)))
 			G_li.append(numpy.mean(temp))	
-			utils_for_q_learning.save(G_li,params,alg)
+			utils_for_q_learning.save(G_li,loss_li,params,alg)

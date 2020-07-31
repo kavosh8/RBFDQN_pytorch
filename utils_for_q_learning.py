@@ -45,11 +45,14 @@ def sync_networks(target, online, alpha, copy = False):
 		    target_param.data.copy_(alpha * online_param.data +
 		                            (1 - alpha) * target_param.data)
 
-def save(li_returns,params,alg):
+def save(li_returns,li_loss,params,alg):
 	directory=alg+"_results/"+params['hyper_parameters_name']+'/'
 	if not os.path.exists(directory):
 	    os.makedirs(directory)
 	numpy.savetxt(directory+str(params['seed_number'])+".txt",li_returns)
+
+	directory=alg+"_results/"+params['hyper_parameters_name']+'/loss_'
+	numpy.savetxt(directory+str(params['seed_number'])+".txt",li_loss)
 
 def set_random_seed(meta_params):
 	seed_number=meta_params['seed_number']
