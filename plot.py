@@ -33,18 +33,20 @@ ylim_up = [-100,235,300,3000,8000,3000,9350,1000,-4]
 #setting_li=[0]
 #setting_li=[0]+list(range(900,910))
 #setting_li=[0]
+labels = ['100 updates', '200 updates']
+colors = ['blue', 'orange']
 for problem in range(8):
 	plt.subplot(3,3,problem+1)
 	print(problems_name[problem])
-	for setting in [0]:
+	for setting in [1,2]:
 		hyper_parameter_name=10*problem+setting
 		acceptable_len=00
 		li=[]
-		for seed_num in range(20):
+		for seed_num in range(10):
 			try:
-				temp=numpy.loadtxt("rbf_results/"+str(hyper_parameter_name)+"/"+str(seed_num)+".txt")
-				#print(hyper_parameter_name,numpy.mean(temp[-10:]),len(temp))
-				#plt.plot(temp)
+				temp=numpy.loadtxt("rbf_results/"+str(hyper_parameter_name)+"/loss_"+str(seed_num)+".txt")
+				#temp=numpy.loadtxt("rbf_results/"+str(hyper_parameter_name)+"/"+str(seed_num)+".txt")
+				plt.plot(smooth(temp),lw=1,color=colors[setting-1])
 				if len(temp)>acceptable_len:
 					li.append(temp)
 					#plt.plot(temp)
@@ -58,9 +60,9 @@ for problem in range(8):
 			numpy.mean(li),len(li),
 			len(li[0]),
 			numpy.mean(numpy.mean(li,axis=0)[-10:]))
-		plt.plot(smooth(numpy.mean(li,axis=0)),label=hyper_parameter_name,lw=3)
-		plt.ylim([ylim_down[problem],ylim_up[problem]])
-		plt.yticks([ylim_down[problem],ylim_up[problem]])
+		plt.plot(smooth(numpy.mean(li,axis=0)),label=labels[setting-1],lw=4,color=colors[setting-1])
+		#plt.ylim([ylim_down[problem],ylim_up[problem]])
+		#plt.yticks([ylim_down[problem],ylim_up[problem]])
 	plt.title(problems_name[problem])
 	plt.legend()
 plt.subplots_adjust(wspace=0.5,hspace = 1)
