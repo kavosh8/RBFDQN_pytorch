@@ -211,8 +211,7 @@ class Net(nn.Module):
 		loss.backward()
 		self.optimizer.step()
 		self.zero_grad()
-		if count % 5 == 0: #ZZZZZZZZ
-			utils_for_q_learning.sync_networks(target = target_Q,
+		utils_for_q_learning.sync_networks(target = target_Q,
 										   online = self, 
 										   alpha = params['target_network_learning_rate'], 
 										   copy = False)

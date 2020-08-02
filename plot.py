@@ -38,20 +38,21 @@ labels = ['100 updates',
 		 '200 updates slow target',
 		 '200 updates slowest target',
 		 '200 updates slowest! target',
+		 '200 updates less target updates',
 		 '200 updates less target updates']
-colors = ['blue', 'orange','brown','black','green','orange','black']
+colors = ['blue', 'orange','brown','black','green','orange','black','black']
 for problem in range(8):
 	plt.subplot(3,3,problem+1)
 	print(problems_name[problem])
-	for setting in [1]:
+	for setting in [2]:
 		hyper_parameter_name=10*problem+setting
 		acceptable_len=00
 		li=[]
 		for seed_num in range(10):
 			try:
-				temp=numpy.loadtxt("rbf_results/"+str(hyper_parameter_name)+"/loss_"+str(seed_num)+".txt")
+				#temp=numpy.loadtxt("rbf_results/"+str(hyper_parameter_name)+"/loss_"+str(seed_num)+".txt")
 				temp=numpy.loadtxt("rbf_results/"+str(hyper_parameter_name)+"/"+str(seed_num)+".txt")
-				#plt.plot(smooth(temp),lw=1,color=colors[setting-1])
+				plt.plot(smooth(temp),lw=1,color=colors[setting-1])
 				if len(temp)>acceptable_len:
 					li.append(temp)
 					#print(hyper_parameter_name,seed_num,numpy.mean(temp[-10:]),len(temp))
