@@ -11,7 +11,7 @@ batch_size,256,integer
 num_points,10,integer
 reward_clip,20,float
 temperature,.1,float
-policy_parameter,2.75,float
+policy_parameter,3.5,float
 norm_smoothing,0.00001,float
 updates_per_episode,200,integer
 dropout_rate,0.4,float
