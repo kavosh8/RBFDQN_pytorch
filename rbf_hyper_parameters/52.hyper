@@ -10,7 +10,7 @@ gamma,0.99,float
 batch_size,256,integer
 num_points,10,integer
 reward_clip,20,float
-temperature,.25,float
+temperature,.15,float
 policy_parameter,2.75,float
 norm_smoothing,0.00001,float
 updates_per_episode,200,integer
