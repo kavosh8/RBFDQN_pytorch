@@ -1,4 +1,4 @@
-env_name,BipedalWalker-v2,string
+env_name,BipedalWalker-v3,string
 max_episode,2000,integer
 num_layers,3,integer
 layer_size,512,integer
