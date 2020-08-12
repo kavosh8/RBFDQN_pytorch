@@ -7,6 +7,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 import numpy
+import pickle
+from collections import deque
 
 def rbf_function_single(centroid_locations, beta, N, norm_smoothing):
 	'''
@@ -182,6 +184,17 @@ class Net(nn.Module):
 			q,a = self.get_best_centroid( torch.FloatTensor(s_matrix))
 			self.train()
 			return a
+	def policy_storage_e_greedy_policy(self,s,episode,train_or_test, policy_storage):
+		epsilon=1./numpy.power(episode,1./self.params['policy_parameter'])
+
+		if train_or_test=='train' and random.random() < epsilon:
+			a = self.env.action_space.sample()
+			return a.tolist()
+		else:
+			Q = random.sample(policy_storage,1)[0]
+			s_matrix = numpy.array(s).reshape(1,self.state_size)
+			q,a = Q.get_best_centroid( torch.FloatTensor(s_matrix))
+			return a	
 
 	def update(self, target_Q, count):
 
@@ -225,12 +238,19 @@ if __name__=='__main__':
 
 	utils_for_q_learning.sync_networks(target = Q_object_target, online = Q_object, alpha = params['target_network_learning_rate'], copy = True)
 
+	policy_storage = deque(maxlen=params['num_stored_policies'])
 	G_li=[]
 	loss_li = []
 	for episode in range(params['max_episode']):
+
+		Q_this_episode = Net(params,env,state_size=len(s0),action_size=len(env.action_space.low))
+		utils_for_q_learning.sync_networks(target = Q_this_episode, online = Q_object, alpha = params['target_network_learning_rate'], copy = True)
+		Q_this_episode.eval()
+		policy_storage.append(Q_this_episode)
+
 		s,done,t=env.reset(),False,0
 		while done==False:
-			a=Q_object.e_greedy_policy(s,episode+1,'train')
+			a=Q_object.policy_storage_e_greedy_policy(s,episode+1,'train',policy_storage)
 			sp,r,done,_=env.step(numpy.array(a))
 			t=t+1
 			done_p = False if t == env._max_episode_steps else done
