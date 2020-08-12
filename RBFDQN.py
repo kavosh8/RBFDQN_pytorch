@@ -185,35 +185,25 @@ class Net(nn.Module):
 
 	def update(self, target_Q, count):
 
-		if len(self.buffer_object.storage)<params['batch_size']:
+		if len(self.buffer_object.storage)<self.params['batch_size']:
 			return 0
 		else:
 			pass
-		batch=random.sample(self.buffer_object.storage,params['batch_size'])
-		s_li=[b['s'] for b in batch]
-		sp_li=[b['sp'] for b in batch]
-		r_li=[b['r'] for b in batch]
-		done_li=[b['done'] for b in batch]
-		a_li=[b['a'] for b in batch]
-		s_matrix=numpy.array(s_li).reshape(params['batch_size'],self.state_size)
-		a_matrix=numpy.array(a_li).reshape(params['batch_size'],self.action_size)
-		r_matrix=numpy.array(r_li).reshape(params['batch_size'],1)
-
+		s_matrix, a_matrix, r_matrix, done_matrix, sp_matrix = self.buffer_object.sample(self.params['batch_size'])
 		r_matrix=numpy.clip(r_matrix,a_min=-self.params['reward_clip'],a_max=self.params['reward_clip'])
-		sp_matrix=numpy.array(sp_li).reshape(params['batch_size'],self.state_size)
-		done_matrix=numpy.array(done_li).reshape(params['batch_size'],1)
+
 		Q_star = target_Q.get_best_centroid_batch(torch.FloatTensor(sp_matrix))
-		Q_star = Q_star.reshape((params['batch_size'],-1))
+		Q_star = Q_star.reshape((self.params['batch_size'],-1))
 		y=r_matrix+self.params['gamma']*(1-done_matrix)*Q_star
 		y_hat = self.forward(torch.FloatTensor(s_matrix),torch.FloatTensor(a_matrix))
-		loss = self.criterion(y_hat,torch.FloatTensor(y))
+		loss = self.criterion(y_hat,torch.FloatTensor(y).detach())
 		self.zero_grad()
 		loss.backward()
 		self.optimizer.step()
 		self.zero_grad()
 		utils_for_q_learning.sync_networks(target = target_Q,
 										   online = self, 
-										   alpha = params['target_network_learning_rate'], 
+										   alpha = self.params['target_network_learning_rate'], 
 										   copy = False)
 		return loss.data.numpy()
 
@@ -238,12 +228,13 @@ if __name__=='__main__':
 	G_li=[]
 	loss_li = []
 	for episode in range(params['max_episode']):
-		s,done=env.reset(),False
+		s,done,t=env.reset(),False,0
 		while done==False:
 			a=Q_object.e_greedy_policy(s,episode+1,'train')
-			#print(s,a)
 			sp,r,done,_=env.step(numpy.array(a))
-			Q_object.buffer_object.append(s,a,r,done,sp)
+			t=t+1
+			done_p = False if t == env._max_episode_steps else done
+			Q_object.buffer_object.append(s,a,r,done_p,sp)
 			s=sp
 
 		
