@@ -179,7 +179,7 @@ class Net(nn.Module):
 			s_matrix = numpy.array(s).reshape(1,self.state_size)
 			q,a = self.get_best_centroid_batch( torch.FloatTensor(s_matrix).to(device))
 			self.train()
-			return a.cpu().data.numpy()
+			return a
 
 	def update(self, target_Q, count):
 
