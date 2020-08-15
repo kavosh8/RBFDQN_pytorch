@@ -10,6 +10,13 @@ import numpy
 import pickle
 from collections import deque
 
+if torch.cuda.is_available():
+	device = torch.device("cuda:0")
+	print("Running on the GPU")
+else:
+	device = torch.device("cpu")
+	print("Running on the CPU")
+
 def rbf_function_single_batch_mode(centroid_locations, beta, N, norm_smoothing):
 	'''
 		no batch
@@ -183,11 +190,15 @@ class Net(nn.Module):
 		s_matrix, a_matrix, r_matrix, done_matrix, sp_matrix = self.buffer_object.sample(self.params['batch_size'])
 		r_matrix=numpy.clip(r_matrix,a_min=-self.params['reward_clip'],a_max=self.params['reward_clip'])
 
-		Q_star = target_Q.get_best_centroid_batch(torch.FloatTensor(sp_matrix))
+		s_matrix, a_matrix, r_matrix = torch.FloatTensor(s_matrix).to(device), torch.FloatTensor(a_matrix).to(device), torch.FloatTensor(r_matrix).to(device)
+		done_matrix, sp_matrix = torch.FloatTensor(done_matrix).to(device), torch.FloatTensor(sp_matrix).to(device)
+
+		Q_star = target_Q.get_best_centroid_batch(sp_matrix)
 		Q_star = Q_star.reshape((self.params['batch_size'],-1))
+		Q_star = torch.FloatTensor(Q_star).to(device)
 		y=r_matrix+self.params['gamma']*(1-done_matrix)*Q_star
-		y_hat = self.forward(torch.FloatTensor(s_matrix),torch.FloatTensor(a_matrix))
-		loss = self.criterion(y_hat,torch.FloatTensor(y).detach())
+		y_hat = self.forward(s_matrix,a_matrix)
+		loss = self.criterion(y_hat,torch.FloatTensor(y).to(device).detach())
 		self.zero_grad()
 		loss.backward()
 		self.optimizer.step()
@@ -199,6 +210,7 @@ class Net(nn.Module):
 		return loss.data.numpy()
 
 if __name__=='__main__':
+	print(torch.cuda.is_available())
 	hyper_parameter_name=sys.argv[1]
 	alg='rbf'
 	params=utils_for_q_learning.get_hyper_parameters(hyper_parameter_name,alg)
@@ -210,8 +222,8 @@ if __name__=='__main__':
 	utils_for_q_learning.set_random_seed(params)
 	s0=env.reset()
 	utils_for_q_learning.action_checker(env)
-	Q_object = Net(params,env,state_size=len(s0),action_size=len(env.action_space.low))
-	Q_object_target = Net(params,env,state_size=len(s0),action_size=len(env.action_space.low))
+	Q_object = Net(params,env,state_size=len(s0),action_size=len(env.action_space.low)).to(device)
+	Q_object_target = Net(params,env,state_size=len(s0),action_size=len(env.action_space.low)).to(device)
 	Q_object_target.eval()
 
 	utils_for_q_learning.sync_networks(target = Q_object_target, online = Q_object, alpha = params['target_network_learning_rate'], copy = True)
