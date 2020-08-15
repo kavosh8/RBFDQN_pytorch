@@ -10,29 +10,24 @@ import numpy
 import pickle
 from collections import deque
 
-def rbf_function_single(centroid_locations, beta, N, norm_smoothing):
+def rbf_function_single_batch_mode(centroid_locations, beta, N, norm_smoothing):
 	'''
 		no batch
 		given N centroids * size of each centroid
 		determine weight of each centroid at each other centroid
 	'''
-	diff_norm_smoothed_negated = []
-	centroid_locations_cat = torch.cat(centroid_locations, dim=0)
-	for i in range(N):
-		centroid_i = centroid_locations_cat[i,:].unsqueeze(0)
-		centroid_i = torch.cat([centroid_i for _ in range(N)],dim=0)
-		diff_i = centroid_locations_cat - centroid_i
-		diff_norm_i = diff_i**2
-		diff_norm_i = torch.sum(diff_norm_i, dim=1)
-		diff_norm_i = diff_norm_i + norm_smoothing
-		diff_norm_i = torch.sqrt(diff_norm_i)
-
-		diff_norm_smoothed_negated_i = diff_norm_i * beta * -1
-		diff_norm_smoothed_negated_i = diff_norm_smoothed_negated_i.unsqueeze(0)
-		diff_norm_smoothed_negated.append(diff_norm_smoothed_negated_i)
-
-	diff_norm_smoothed_negated = torch.cat(diff_norm_smoothed_negated,dim=0)
-	weights = F.softmax(diff_norm_smoothed_negated, dim=1)
+	centroid_locations = [c.unsqueeze(1) for c in centroid_locations]
+	centroid_locations_cat = torch.cat(centroid_locations, dim=1)
+	centroid_locations_cat = centroid_locations_cat.unsqueeze(2)
+	centroid_locations_cat = torch.cat([centroid_locations_cat for _ in range(N)],dim=2)
+	centroid_locations_cat_transpose = centroid_locations_cat.permute(0,2,1,3)
+	diff      = centroid_locations_cat - centroid_locations_cat_transpose
+	diff_norm = diff**2
+	diff_norm = torch.sum(diff_norm, dim=3)
+	diff_norm = diff_norm + norm_smoothing
+	diff_norm = torch.sqrt(diff_norm)
+	diff_norm = diff_norm * beta * -1
+	weights   = F.softmax(diff_norm, dim=2)
 	return weights
 
 def rbf_function(centroid_locations, action, beta, N, norm_smoothing):
@@ -50,8 +45,8 @@ def rbf_function(centroid_locations, action, beta, N, norm_smoothing):
 	diff_norm = torch.sum(diff_norm, dim=2)
 	diff_norm = diff_norm + norm_smoothing
 	diff_norm = torch.sqrt(diff_norm)
-	diff_norm_smoothed_negated = diff_norm * beta * -1
-	output = F.softmax(diff_norm_smoothed_negated, dim=1)
+	diff_norm = diff_norm * beta * -1
+	output    = F.softmax(diff_norm, dim=1)
 	return output 
 
 class Net(nn.Module):
@@ -64,7 +59,8 @@ class Net(nn.Module):
 		self.max_a = self.env.action_space.high[0]
 		self.beta = self.params['temperature']
 
-		self.buffer_object = buffer_class.buffer_class(max_length=self.params['max_buffer_size'])
+		self.buffer_object = buffer_class.buffer_class(max_length = self.params['max_buffer_size'],
+													   seed_number = self.params['seed_number'])
 
 		self.state_size, self.action_size = state_size, action_size
 
@@ -114,8 +110,12 @@ class Net(nn.Module):
 			given a batch of s,a compute Q(s,a)
 		'''
 		centroid_values = self.get_centroid_values(s)
-		centroid_locations = self.get_all_centroids(s)
-		centroid_weights = rbf_function(centroid_locations, a, self.beta, self.N, self.params['norm_smoothing'])
+		centroid_locations = self.get_all_centroids_batch_mode(s)
+		centroid_weights = rbf_function(centroid_locations, 
+										a, 
+										self.beta, 
+										self.N, 
+										self.params['norm_smoothing'])
 		output = torch.mul(centroid_weights,centroid_values)
 		output = output.sum(1,keepdim=True)
 		return output
@@ -130,46 +130,32 @@ class Net(nn.Module):
 		centroid_values = self.value_side4(temp)
 		return centroid_values
 
-	def get_all_centroids(self, s):
+	def get_all_centroids_batch_mode(self, s):
 		temp = F.relu(self.location_side1(s))
 		temp = self.drop(temp)
-
-		centroid_locations = []
-		for i in range(self.N):
-		    centroid_locations.append( self.max_a*torch.tanh(self.location_side2[i](temp)) )
+		temp = [self.location_side2[i](temp).unsqueeze(0) for i in range(self.N)]
+		temp = torch.cat(temp,dim=0)
+		temp = self.max_a*torch.tanh(temp)
+		centroid_locations = list(torch.split(temp, split_size_or_sections=1, dim=0))
+		centroid_locations = [c.squeeze(0) for c in centroid_locations]
 		return centroid_locations
-
-	def get_best_centroid(self, s, maxOrmin='max'):
-		all_centroids = self.get_all_centroids(s)
-		weights = rbf_function_single(all_centroids, self.beta, self.N, self.params['norm_smoothing'])
-		values = self.get_centroid_values(s)
-		values = torch.transpose(values, 0, 1)
-		temp = torch.mm(weights,values)
-		if maxOrmin=='max':
-			values, indices = temp.max(0)
-		elif maxOrmin=='min':
-			values, indices = temp.min(0)
-		Q_star = values.data.numpy()[0]
-		index_star = indices.data.numpy()[0]
-		a_star = list(all_centroids[index_star].data.numpy()[0])
-		return Q_star, a_star
-	
+		
 	def get_best_centroid_batch(self, s):
 		'''
 			given a batch of states s
 			determine max_{a} Q(s,a)
 		'''
-		all_centroids = self.get_all_centroids(s)
-		values = self.get_centroid_values(s)
-		li=[]
-		for i in range(self.N):
-			#print(all_centroids[i].shape)
-			weights = rbf_function(all_centroids, all_centroids[i], self.beta, self.N, self.params['norm_smoothing'])
-			temp = torch.sum(torch.mul(weights,values), dim=1, keepdim=True)
-			li.append(temp)
-		allQ=torch.cat(li,dim=1)
-		best,_ = allQ.max(1)
-		return best.data.numpy()
+		all_centroids = self.get_all_centroids_batch_mode(s)
+		values = self.get_centroid_values(s).unsqueeze(2)
+		weights = rbf_function_single_batch_mode(all_centroids, self.beta, self.N, self.params['norm_smoothing'])
+		allq = torch.bmm(weights, values).squeeze(2)
+		best,indices = allq.max(1)
+		if s.shape[0] == 1: #the function is called for a single state s
+			index_star = indices.data.numpy()[0]
+			a = list(all_centroids[index_star].data.numpy()[0])
+			return best.data.numpy(), a
+		else: #batch mode, for update
+			return best.data.numpy()
 
 
 	def e_greedy_policy(self,s,episode,train_or_test):
@@ -181,19 +167,8 @@ class Net(nn.Module):
 		else:
 			self.eval()
 			s_matrix = numpy.array(s).reshape(1,self.state_size)
-			q,a = self.get_best_centroid( torch.FloatTensor(s_matrix))
+			q,a = self.get_best_centroid_batch( torch.FloatTensor(s_matrix))
 			self.train()
-			return a
-	def policy_storage_e_greedy_policy(self,s,episode,train_or_test, policy_storage):
-		epsilon=1./numpy.power(episode,1./self.params['policy_parameter'])
-
-		if train_or_test=='train' and random.random() < epsilon:
-			a = self.env.action_space.sample()
-			return a.tolist()
-		else:
-			Q = random.sample(policy_storage,1)[0]
-			s_matrix = numpy.array(s).reshape(1,self.state_size)
-			q,a = Q.get_best_centroid( torch.FloatTensor(s_matrix))
 			return a	
 
 	def update(self, target_Q, count):
@@ -238,7 +213,6 @@ if __name__=='__main__':
 
 	utils_for_q_learning.sync_networks(target = Q_object_target, online = Q_object, alpha = params['target_network_learning_rate'], copy = True)
 
-	policy_storage = deque(maxlen=params['num_stored_policies'])
 	G_li=[]
 	loss_li = []
 	for episode in range(params['max_episode']):
@@ -246,26 +220,21 @@ if __name__=='__main__':
 		Q_this_episode = Net(params,env,state_size=len(s0),action_size=len(env.action_space.low))
 		utils_for_q_learning.sync_networks(target = Q_this_episode, online = Q_object, alpha = params['target_network_learning_rate'], copy = True)
 		Q_this_episode.eval()
-		policy_storage.append(Q_this_episode)
 
 		s,done,t=env.reset(),False,0
 		while done==False:
-			a=Q_object.policy_storage_e_greedy_policy(s,episode+1,'train',policy_storage)
+			a=Q_object.e_greedy_policy(s,episode+1,'train')
 			sp,r,done,_=env.step(numpy.array(a))
 			t=t+1
 			done_p = False if t == env._max_episode_steps else done
 			Q_object.buffer_object.append(s,a,r,done_p,sp)
 			s=sp
-
-		
 		#now update the Q network
 		loss = []
 		for count in range(params['updates_per_episode']):
 			temp = Q_object.update(Q_object_target, count)
 			loss.append(temp)
-		#print(loss)
 		loss_li.append(numpy.mean(loss))
-		#print(loss_li)
 
 
 		if (episode % 10 == 0) or (episode == params['max_episode'] - 1):

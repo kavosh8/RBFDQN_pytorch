@@ -4,7 +4,7 @@ import os.path
 bash_script = '''#!/bin/bash
 #SBATCH -n 1
 #SBATCH --mem=4G
-#SBATCH -t 48:00:00
+#SBATCH -t 72:00:00
 source ~/anaconda3/bin/activate pyt3
 echo "prog started at: $(date)"
 cd ~/RBFDQN_pytorch

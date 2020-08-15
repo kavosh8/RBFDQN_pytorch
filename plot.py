@@ -44,7 +44,7 @@ colors = ['blue', 'orange','brown','black','green','blue','black','blue']
 for problem in range(3):
 	plt.subplot(3,3,problem+1)
 	print(problems_name[problem])
-	for setting in [0,2]:
+	for setting in [0,4]:
 		hyper_parameter_name=10*problem+setting
 		acceptable_len=00
 		li=[]
@@ -55,7 +55,7 @@ for problem in range(3):
 				#plt.plot(smooth(temp),lw=1,color=colors[setting-1])
 				if len(temp)>acceptable_len:
 					li.append(temp)
-					print(hyper_parameter_name,seed_num,numpy.mean(temp[-1:]),len(temp))
+					print(hyper_parameter_name,seed_num,numpy.mean(temp[-5:]),len(temp))
 			except:
 				#print("problem")
 				pass

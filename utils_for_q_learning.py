@@ -2,7 +2,6 @@ import numpy
 import os
 
 def action_checker(env):
-	print("action range:",env.action_space.low,env.action_space.high)
 	for l,h in zip(env.action_space.low,env.action_space.high):
 		if l!=-h:
 			print("asymetric action space")
@@ -63,3 +62,4 @@ def set_random_seed(meta_params):
 	import torch
 	torch.manual_seed(seed_number)
 	meta_params['env'].seed(seed_number)
+	meta_params['env'].action_space.np_random.seed(seed_number)

@@ -3,7 +3,7 @@ from collections import deque
 import random
 
 class buffer_class:
-	def __init__(self,max_length):
+	def __init__(self,max_length, seed_number):
 		self.storage=deque(maxlen=max_length)
 
 	def append(self,s,a,r,done,sp):
