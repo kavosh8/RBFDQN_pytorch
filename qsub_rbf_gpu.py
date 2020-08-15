@@ -9,7 +9,6 @@ bash_script = '''#!/bin/bash
 source ~/anaconda3/bin/activate pyt3
 echo "prog started at: $(date)"
 cd ~/RBFDQN_pytorch
-module load pytorch
 module load cuda/9.0.176
 module load cudnn/7.0
 module load opengl/mesa-12.0.6
