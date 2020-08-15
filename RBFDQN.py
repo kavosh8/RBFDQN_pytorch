@@ -161,11 +161,11 @@ class Net(nn.Module):
 		allq = torch.bmm(weights, values).squeeze(2)
 		best,indices = allq.max(1)
 		if s.shape[0] == 1: #the function is called for a single state s
-			index_star = indices.cpu.data.numpy()[0]
-			a = list(all_centroids[index_star].cpu.data.numpy()[0])
-			return best.cpu.data.numpy(), a
+			index_star = indices.cpu().data.numpy()[0]
+			a = list(all_centroids[index_star].cpu().data.numpy()[0])
+			return best.cpu().data.numpy(), a
 		else: #batch mode, for update
-			return best.cpu.data.numpy()
+			return best.cpu().data.numpy()
 
 
 	def e_greedy_policy(self,s,episode,train_or_test):
@@ -179,7 +179,7 @@ class Net(nn.Module):
 			s_matrix = numpy.array(s).reshape(1,self.state_size)
 			q,a = self.get_best_centroid_batch( torch.FloatTensor(s_matrix).to(device))
 			self.train()
-			return a.cpu.data.numpy()
+			return a.cpu().data.numpy()
 
 	def update(self, target_Q, count):
 
@@ -207,7 +207,7 @@ class Net(nn.Module):
 										   online = self, 
 										   alpha = self.params['target_network_learning_rate'], 
 										   copy = False)
-		return loss.cpu.data.numpy()
+		return loss.cpu().data.numpy()
 
 if __name__=='__main__':
 	print(torch.cuda.is_available())
