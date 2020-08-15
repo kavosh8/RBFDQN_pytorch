@@ -139,7 +139,7 @@ class Net(nn.Module):
 		centroid_locations = list(torch.split(temp, split_size_or_sections=1, dim=0))
 		centroid_locations = [c.squeeze(0) for c in centroid_locations]
 		return centroid_locations
-		
+
 	def get_best_centroid_batch(self, s):
 		'''
 			given a batch of states s
@@ -147,7 +147,10 @@ class Net(nn.Module):
 		'''
 		all_centroids = self.get_all_centroids_batch_mode(s)
 		values = self.get_centroid_values(s).unsqueeze(2)
-		weights = rbf_function_single_batch_mode(all_centroids, self.beta, self.N, self.params['norm_smoothing'])
+		weights = rbf_function_single_batch_mode(all_centroids, 
+												 self.beta, 
+												 self.N, 
+												 self.params['norm_smoothing'])
 		allq = torch.bmm(weights, values).squeeze(2)
 		best,indices = allq.max(1)
 		if s.shape[0] == 1: #the function is called for a single state s
