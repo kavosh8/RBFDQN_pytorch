@@ -14,12 +14,12 @@ python RBFDQN.py {} {}
 if not os.path.exists('pbs_files'):
 	os.makedirs('pbs_files')
 
-min_seed=0
-max_seed=20
+min_seed=5
+max_seed=10
 
 for seed_num in range(min_seed,max_seed):
 	for domain in range(3):
-		for setting in range(1,5):
+		for setting in range(2):
 			hyper_parameter_name=domain*10+setting
 			outfile="pbs_files/RBFDQN{}_{}.pbs".format(str(hyper_parameter_name),
 														  str(seed_num)
