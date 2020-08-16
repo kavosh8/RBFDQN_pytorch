@@ -198,7 +198,7 @@ class Net(nn.Module):
 		Q_star = torch.FloatTensor(Q_star).to(device)
 		y=r_matrix+self.params['gamma']*(1-done_matrix)*Q_star
 		y_hat = self.forward(s_matrix,a_matrix)
-		loss = self.criterion(y_hat,torch.FloatTensor(y).to(device).detach())
+		loss = self.criterion(y_hat,y.detach())
 		self.zero_grad()
 		loss.backward()
 		self.optimizer.step()
