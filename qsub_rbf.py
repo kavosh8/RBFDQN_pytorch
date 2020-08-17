@@ -4,7 +4,7 @@ import os.path
 bash_script = '''#!/bin/bash
 #SBATCH -n 1
 #SBATCH --mem=4G
-#SBATCH -t 72:00:00
+#SBATCH -t 48:00:00
 source ~/anaconda3/bin/activate pyt3
 echo "prog started at: $(date)"
 cd ~/RBFDQN_pytorch
@@ -14,12 +14,17 @@ python RBFDQN.py {} {}
 if not os.path.exists('pbs_files'):
 	os.makedirs('pbs_files')
 
-min_seed=5
-max_seed=10
+
+
+
+
+
+min_seed=0
+max_seed=5
 
 for seed_num in range(min_seed,max_seed):
-	for domain in range(3):
-		for setting in range(2):
+	for domain in [4]:
+		for setting in range(2,10):
 			hyper_parameter_name=domain*10+setting
 			outfile="pbs_files/RBFDQN{}_{}.pbs".format(str(hyper_parameter_name),
 														  str(seed_num)
