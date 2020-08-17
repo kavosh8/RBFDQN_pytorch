@@ -371,6 +371,8 @@ if __name__=='__main__':
 
 	G_li=[]
 	loss_li = []
+	all_times_per_steps = []
+	all_times_per_updates = []
 	for episode in range(params['max_episode']):
 
 		Q_this_episode = Net(params,env,state_size=len(s0),action_size=len(env.action_space.low))
@@ -389,8 +391,11 @@ if __name__=='__main__':
 			Q_object.buffer_object.append(s,a,r,done_p,sp)
 			s=sp
 		end = time.time()
+		time_per_step = (end - start) / num_steps
+		all_times_per_steps.append(time_per_step)
 		if num_steps != 0:
-			_print(1, "e-greedy: {} per step".format((end - start) / num_steps))
+			_print(1, "e-greedy: {} per step".format(time_per_step))
+			_print(1, "Average e-greedy after {} episodes: {}".format(episode, sum(all_times_per_steps) / len(all_times_per_steps)))
 		else:
 			_print(1, 'no steps...')
 		#now update the Q network
@@ -400,7 +405,11 @@ if __name__=='__main__':
 			temp = Q_object.update(Q_object_target, count)
 			loss.append(temp)
 		end = time.time()
-		_print(1, "per update: {}".format((end - start) / params['updates_per_episode']))
+		time_per_update = (end - start) / params['updates_per_episode']
+		all_times_per_updates.append(time_per_update)
+		_print(1, "per update: {}".format(time_per_update))
+		_print(1, "Average time-per-update after {} episodes: {}".format(episode, sum(all_times_per_updates) / len(all_times_per_updates)))
+
 		loss_li.append(numpy.mean(loss))
 
 
