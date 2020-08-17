@@ -8,6 +8,8 @@ bash_script = '''#!/bin/bash
 source ~/anaconda3/bin/activate pyt3
 echo "prog started at: $(date)"
 cd ~/RBFDQN_pytorch
+module load opengl/mesa-12.0.6
+module load ffmpeg/4.0.1
 python RBFDQN.py {} {}
 '''
 #export LD_LIBRARY_PATH=$LD_LIBRARY_PATH/home/kasadiat/.mujoco/mujoco200/bin s
