@@ -25,7 +25,7 @@ min_seed=0
 max_seed=10
 
 for seed_num in range(min_seed,max_seed):
-	for domain in [0,1,2]:
+	for domain in [2]:
 		for setting in range(3):
 			hyper_parameter_name=domain*10+setting
 			outfile="pbs_files/RBFDQN{}_{}.pbs".format(str(hyper_parameter_name),
