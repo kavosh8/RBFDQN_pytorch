@@ -158,8 +158,8 @@ class Net(nn.Module):
 			index_star = indices.cpu().data.numpy()[0]
 			a = list(all_centroids[0,index_star].cpu().data.numpy())
 			return best.cpu().data.numpy(), a
-		else: #batch mode, for update
-			return best.cpu().data.numpy()
+		else: #the function is called for Q updates
+			return best
 
 
 	def e_greedy_policy(self,s,episode,train_or_test):
@@ -189,7 +189,6 @@ class Net(nn.Module):
 
 		Q_star = target_Q.get_best_centroid_batch(sp_matrix)
 		Q_star = Q_star.reshape((self.params['batch_size'],-1))
-		Q_star = torch.FloatTensor(Q_star).to(device)
 		y=r_matrix+self.params['gamma']*(1-done_matrix)*Q_star
 		y_hat = self.forward(s_matrix,a_matrix)
 		loss = self.criterion(y_hat,y.detach())
