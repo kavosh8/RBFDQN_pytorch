@@ -48,7 +48,7 @@ for problem in [4]:
 		hyper_parameter_name=10*problem+setting
 		acceptable_len=00
 		li=[]
-		for seed_num in range(1):
+		for seed_num in range(5):
 			try:
 				temp=numpy.loadtxt("rbf_results/"+str(hyper_parameter_name)+"/loss_"+str(seed_num)+".txt")
 				temp=numpy.loadtxt("rbf_results/"+str(hyper_parameter_name)+"/"+str(seed_num)+".txt")
@@ -65,7 +65,7 @@ for problem in [4]:
 			numpy.mean(li),len(li),
 			len(li[0]),
 			numpy.mean(numpy.mean(li,axis=0)[-1:]))
-		plt.plot(smooth(numpy.mean(li,axis=0)),label=setting,lw=4,color=colors[setting])
+		plt.plot(smooth(numpy.mean(li,axis=0)),label=setting,lw=4,color=colors[setting%len(colors)])
 		#plt.ylim([ylim_down[problem],ylim_up[problem]])
 		#plt.yticks([ylim_down[problem],ylim_up[problem]])
 	plt.title(problems_name[problem])

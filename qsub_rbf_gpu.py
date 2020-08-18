@@ -5,7 +5,7 @@ bash_script = '''#!/bin/bash
 #SBATCH -p gpu
 #SBATCH --gres=gpu:1
 #SBATCH --mem=4G
-#SBATCH -t 24:00:00
+#SBATCH -t 48:00:00
 source ~/anaconda3/bin/activate pyt3
 echo "prog started at: $(date)"
 cd ~/RBFDQN_pytorch
@@ -24,7 +24,7 @@ max_seed=5
 
 for seed_num in range(min_seed,max_seed):
 	for domain in [4]:
-		for setting in [0,1]:
+		for setting in range(6):
 			hyper_parameter_name=domain*10+setting
 			outfile="pbs_files/RBFDQN{}_{}.pbs".format(str(hyper_parameter_name),
 														  str(seed_num)
