@@ -8,7 +8,7 @@ target_network_learning_rate,0.005,float
 max_buffer_size,500000,integer
 gamma,0.99,float
 batch_size,256,integer
-num_points,30,integer
+num_points,500,integer
 reward_clip,20,float
 temperature,2,float
 policy_parameter,2.75,float
