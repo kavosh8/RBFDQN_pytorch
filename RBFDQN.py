@@ -143,20 +143,22 @@ class Net(nn.Module):
 
 		self.drop = nn.Dropout(p=self.params['dropout_rate'])
 
-		self.location_side1 = nn.Linear(self.state_size, self.params['layer_size'])
-		torch.nn.init.xavier_uniform_(self.location_side1.weight)
-		torch.nn.init.zeros_(self.location_side1.bias)
+		self.location_module = nn.Sequential(
+			nn.Linear(self.state_size, self.params['layer_size']),
+			nn.Dropout(p=self.params['dropout_rate']),
+			nn.ReLU(),
+			nn.Linear(self.params['layer_size'], self.action_size*self.N),
+			utils_for_q_learning.Reshape(-1, self.N, self.action_size),
+			nn.Tanh(),
+		)
 
-		self.location_side2 = []
-		for _ in range(self.N):
-			temp = nn.Linear(self.params['layer_size'], self.action_size)
-			temp.weight.data.uniform_(-.1, .1)
-			temp.bias.data.uniform_(-1, +1)
-			#nn.init.uniform_(temp.bias,a = -2.0, b = +2.0)
-			self.location_side2.append(temp)
-		self.location_side2 = torch.nn.ModuleList(self.location_side2)
+		torch.nn.init.xavier_uniform_(self.location_module[0].weight)
+		torch.nn.init.zeros_(self.location_module[0].bias)
+
+		self.location_module[3].weight.data.uniform_(-.1, .1)
+		self.location_module[3].bias.data.uniform_(-1., 1.)
+
 		self.criterion = nn.MSELoss()
-
 
 		self.params_dic=[]
 		self.params_dic.append({'params': self.value_side1_parameters, 'lr': self.params['learning_rate']})
@@ -164,10 +166,9 @@ class Net(nn.Module):
 		
 		self.params_dic.append({'params': self.value_side3_parameters, 'lr': self.params['learning_rate']})
 		self.params_dic.append({'params': self.value_side4_parameters, 'lr': self.params['learning_rate']})
-		self.params_dic.append({'params': self.location_side1.parameters(), 'lr': self.params['learning_rate_location_side']})
 
-		for i in range(self.N):
-		    self.params_dic.append({'params': self.location_side2[i].parameters(), 'lr': self.params['learning_rate_location_side']}) 
+		self.params_dic.append({'params': self.location_module.parameters(), 'lr': self.params['learning_rate_location_side']})
+
 		self.optimizer = optim.RMSprop(self.params_dic)
 
 	def forward(self, s, a):
@@ -195,24 +196,9 @@ class Net(nn.Module):
 
 		return centroid_values
 
-	def get_all_centroids_batch_mode(self, s):
-		temp = F.relu(self.location_side1(s))
-		temp = self.drop(temp)
-		temp = [self.location_side2[i](temp).unsqueeze(0) for i in range(self.N)]
-		temp = torch.cat(temp,dim=0)
-		temp = self.max_a*torch.tanh(temp)
-		centroid_locations = list(torch.split(temp, split_size_or_sections=1, dim=0))
-		centroid_locations = [c.squeeze(0) for c in centroid_locations]
-
-		_print(2, "Length of centroid_locations: {} and shape of each element: {}".format(len(centroid_locations), centroid_locations[0].shape))
-		return centroid_locations
 
 	def new_get_all_centroids_batch_mode(self, s):
-		output = F.relu(self.location_side1(s))
-		output = self.drop(output)
-		output = [self.location_side2[i](output).unsqueeze(1) for i in range(self.N)]
-		output = torch.cat(output, dim=1)
-		centroid_locations = self.max_a * torch.tanh(output)
+		centroid_locations = self.max_a * self.location_module(s)
 		return centroid_locations
 
 
