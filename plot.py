@@ -41,7 +41,7 @@ labels = ['100 updates',
 		 '200 updates less target updates',
 		 '200 updates less target updates']
 colors = ['blue', 'orange','brown','black','green','red','black','blue']
-for problem in [0,1,2,4,5]:
+for problem in [0,1,2,4]:
 	plt.subplot(3,3,problem+1)
 	print(problems_name[problem])
 	for setting in [0,1]:

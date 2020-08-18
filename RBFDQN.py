@@ -23,10 +23,8 @@ def rbf_function_single_batch_mode(centroid_locations, beta, N, norm_smoothing):
 		given N centroids * size of each centroid
 		determine weight of each centroid at each other centroid
 	'''
-	centroid_locations = [c.unsqueeze(1) for c in centroid_locations]
-	centroid_locations_cat = torch.cat(centroid_locations, dim=1)
-	centroid_locations_cat = centroid_locations_cat.unsqueeze(2)
-	centroid_locations_cat = torch.cat([centroid_locations_cat for _ in range(N)],dim=2)
+	centroid_locations = centroid_locations.unsqueeze(3)
+	centroid_locations_cat = torch.cat([centroid_locations for _ in range(N)],dim=2)
 	centroid_locations_cat_transpose = centroid_locations_cat.permute(0,2,1,3)
 	diff      = centroid_locations_cat - centroid_locations_cat_transpose
 	diff_norm = diff**2
@@ -43,11 +41,8 @@ def rbf_function(centroid_locations, action, beta, N, norm_smoothing):
 		and batch size * size of each action, determine the weight of
 		each centroid for the action 
 	'''
-	centroid_locations_squeezed = [l.unsqueeze(1) for l in centroid_locations]
-	centroid_locations_cat = torch.cat(centroid_locations_squeezed, dim=1)
-	action_unsqueezed = action.unsqueeze(1)
-	action_cat = torch.cat([action_unsqueezed for _ in range(N)], dim=1)
-	diff = centroid_locations_cat - action_cat
+	action_cat = torch.cat([action.unsqueeze(1) for _ in range(N)],dim=1)
+	diff = centroid_locations - action_cat
 	diff_norm = diff**2
 	diff_norm = torch.sum(diff_norm, dim=2)
 	diff_norm = diff_norm + norm_smoothing
@@ -143,8 +138,7 @@ class Net(nn.Module):
 		temp = [self.location_side2[i](temp).unsqueeze(0) for i in range(self.N)]
 		temp = torch.cat(temp,dim=0)
 		temp = self.max_a*torch.tanh(temp)
-		centroid_locations = list(torch.split(temp, split_size_or_sections=1, dim=0))
-		centroid_locations = [c.squeeze(0) for c in centroid_locations]
+		centroid_locations = temp.permute(1,0,2)
 		return centroid_locations
 
 	def get_best_centroid_batch(self, s):
@@ -162,7 +156,7 @@ class Net(nn.Module):
 		best,indices = allq.max(1)
 		if s.shape[0] == 1: #the function is called for a single state s
 			index_star = indices.cpu().data.numpy()[0]
-			a = list(all_centroids[index_star].cpu().data.numpy()[0])
+			a = list(all_centroids[0,index_star].cpu().data.numpy())
 			return best.cpu().data.numpy(), a
 		else: #batch mode, for update
 			return best.cpu().data.numpy()
@@ -225,8 +219,10 @@ if __name__=='__main__':
 	Q_object = Net(params,env,state_size=len(s0),action_size=len(env.action_space.low)).to(device)
 	Q_object_target = Net(params,env,state_size=len(s0),action_size=len(env.action_space.low)).to(device)
 	Q_object_target.eval()
-
-	utils_for_q_learning.sync_networks(target = Q_object_target, online = Q_object, alpha = params['target_network_learning_rate'], copy = True)
+	utils_for_q_learning.sync_networks( target = Q_object_target, 
+										online = Q_object, 
+										alpha = params['target_network_learning_rate'], 
+										copy = True)
 
 	G_li=[]
 	loss_li = []
