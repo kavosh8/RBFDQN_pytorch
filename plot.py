@@ -8,7 +8,7 @@ def truncate(li):
 	N=numpy.min([len(x) for x in li])
 	return [l[:N] for l in li]
 def smooth(li):
-	window=1
+	window=2
 	y=li
 	y_smooth=[numpy.mean(y[max(x-window,0):x+window]) for x in range(len(y))]
 	return y_smooth
@@ -41,10 +41,10 @@ labels = ['100 updates',
 		 '200 updates less target updates',
 		 '200 updates less target updates']
 colors = ['blue', 'orange','brown','black','green','red','black','blue']
-for problem in [4]:
+for problem in [0,1,2,4,5]:
 	plt.subplot(3,3,problem+1)
 	print(problems_name[problem])
-	for setting in [0,1,4]:
+	for setting in [0,1]:
 		hyper_parameter_name=10*problem+setting
 		acceptable_len=00
 		li=[]
