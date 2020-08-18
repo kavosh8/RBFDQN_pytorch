@@ -23,7 +23,7 @@ def rbf_function_single_batch_mode(centroid_locations, beta, N, norm_smoothing):
 		given N centroids * size of each centroid
 		determine weight of each centroid at each other centroid
 	'''
-	centroid_locations = centroid_locations.unsqueeze(3)
+	centroid_locations = centroid_locations.unsqueeze(2)
 	centroid_locations_cat = torch.cat([centroid_locations for _ in range(N)],dim=2)
 	centroid_locations_cat_transpose = centroid_locations_cat.permute(0,2,1,3)
 	diff      = centroid_locations_cat - centroid_locations_cat_transpose
