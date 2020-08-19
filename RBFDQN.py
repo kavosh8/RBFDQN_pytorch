@@ -13,12 +13,6 @@ import numpy
 import pickle
 from collections import deque
 
-if torch.cuda.is_available():
-	device = torch.device("cuda:0")
-	print("Running on the GPU")
-else:
-	device = torch.device("cpu")
-	print("Running on the CPU")
 
 LOGGING_LEVEL = 1
 
@@ -26,122 +20,51 @@ def _print(logging_level, stuff):
 	if LOGGING_LEVEL >= logging_level:
 		print(stuff)
 
+def rbf_function(centroid_locations, action_set, beta):
+	'''
+	centroid_locations: Tensor [batch x num_centroids (N) x a_dim (action_size)]
+	action_set: Tensor [batch x num_act x a_dim (action_size)]
+		- Note: pass in num_act = 1 if you want a single action evaluated
+	beta: float
+		- Parameter for RBF function
 
-def rbf_function_single_batch_mode(centroid_locations, beta, N, norm_smoothing):
+	Description: Computes the RBF function given centroid_locations and some actions
 	'''
-		no batch
-		given N centroids * size of each centroid
-		determine weight of each centroid at each other centroid
-	'''
-	_print(2, "rbf_function_single_batch_mode: centroid locations length {} and shape of elems {}".format(len(centroid_locations), centroid_locations[0].shape))
-	s = time.time()
-	centroid_locations = [c.unsqueeze(1) for c in centroid_locations]
-	centroid_locations_cat = torch.cat(centroid_locations, dim=1)
-	centroid_locations_cat = centroid_locations_cat.unsqueeze(2)
-	centroid_locations_cat = torch.cat([centroid_locations_cat for _ in range(N)],dim=2)
-	centroid_locations_cat_transpose = centroid_locations_cat.permute(0,2,1,3)
-	diff      = centroid_locations_cat - centroid_locations_cat_transpose
-	diff_norm = diff**2
-	diff_norm = torch.sum(diff_norm, dim=3)
-	diff_norm = diff_norm + norm_smoothing
-	diff_norm = torch.sqrt(diff_norm)
+	assert len(centroid_locations.shape) == 3, "Must pass tensor with shape: [batch x N x a_dim]"
+	assert len(action_set.shape) == 3, "Must pass tensor with shape: [batch x num_act x a_dim]"
+
+	diff_norm = torch.cdist(centroid_locations, action_set, p=2) # batch x N x num_act
 	diff_norm = diff_norm * beta * -1
-	weights   = F.softmax(diff_norm, dim=2)
-	e = time.time()
-
-	_print(2, "rbf_function_single_batch_mode: weights shape: {}".format(weights.shape))
-
-	_print(2, "non-cdist variant: {}".format(e - s))
-
+	weights   = F.softmax(diff_norm, dim=2) # batch x N x num_act
 	return weights
-
-def new_rbf_function_single_batch_mode(centroid_locations, beta, N):
-	'''
-		no batch
-		now, centroid_locations is a tensor! 
-
-		given N centroids * size of each centroid
-		determine weight of each centroid at each other centroid
-
-		Essentially we're making a distance-from-to thing
-		The tough thing here, as always,  
-
-	'''
-	s = time.time()
-	diff_norm = torch.cdist(centroid_locations, centroid_locations, p=2)
-	diff_norm = diff_norm * beta * -1
-	weights   = F.softmax(diff_norm, dim=2)
-	e = time.time()
-	_print(2, "cdist variant: {}".format(e - s))
-	return weights
-
-def rbf_function(centroid_locations, action, beta, N, norm_smoothing):
-	'''
-		given batch size * N centroids * size of each centroid
-		and batch size * size of each action, determine the weight of
-		each centroid for the action 
-	'''
-	centroid_locations_squeezed = [l.unsqueeze(1) for l in centroid_locations]
-	centroid_locations_cat = torch.cat(centroid_locations_squeezed, dim=1)
-	action_unsqueezed = action.unsqueeze(1)
-	action_cat = torch.cat([action_unsqueezed for _ in range(N)], dim=1)
-	diff = centroid_locations_cat - action_cat
-	diff_norm = diff**2
-	diff_norm = torch.sum(diff_norm, dim=2)
-	diff_norm = diff_norm + norm_smoothing
-	diff_norm = torch.sqrt(diff_norm)
-	diff_norm = diff_norm * beta * -1
-	output    = F.softmax(diff_norm, dim=1)
-
-	_print(2, "RBF_FUNCTION output shape: {}".format(output.shape))
-
-	return output 
-
-def new_rbf_function(centroid_locations, action, beta, N):
-	'''
-		no batch
-		now, centroid_locations is a tensor! 
-
-		given N centroids * size of each centroid
-		determine weight of each centroid at each other centroid
-
-		Essentially we're making a distance-from-to thing
-		The tough thing here, as always,  
-
-	'''
-	diff_norm = torch.cdist(centroid_locations, action.unsqueeze(dim=1), p=2)
-	diff_norm = diff_norm * beta * -1
-	weights   = F.softmax(diff_norm, dim=2)
-	return weights.squeeze(-1)
 
 class Net(nn.Module):
-	def __init__(self, params, env, state_size, action_size):
+	def __init__(self, params, env, state_size, action_size, device):
 		super(Net, self).__init__()
 		
 		self.env = env
+		self.device = device
 		self.params = params
 		self.N = self.params['num_points']
 		self.max_a = self.env.action_space.high[0]
 		self.beta = self.params['temperature']
 
-		self.buffer_object = buffer_class.buffer_class(max_length = self.params['max_buffer_size'],
-													   seed_number = self.params['seed_number'])
+		self.buffer_object = buffer_class.buffer_class(
+				max_length = self.params['max_buffer_size'],
+				seed_number = self.params['seed_number']
+			)
 
 		self.state_size, self.action_size = state_size, action_size
 
-		self.value_side1 = nn.Linear(self.state_size, self.params['layer_size'])
-		self.value_side1_parameters = self.value_side1.parameters()
-
-		self.value_side2 = nn.Linear(self.params['layer_size'], self.params['layer_size'])
-		self.value_side2_parameters = self.value_side2.parameters()
-
-		self.value_side3 = nn.Linear(self.params['layer_size'], self.params['layer_size'])
-		self.value_side3_parameters = self.value_side3.parameters()
-
-		self.value_side4 = nn.Linear(self.params['layer_size'], self.N)
-		self.value_side4_parameters = self.value_side4.parameters()
-
-		self.drop = nn.Dropout(p=self.params['dropout_rate'])
+		self.value_module = nn.Sequential(
+			nn.Linear(self.state_size, self.params['layer_size']),
+			nn.ReLU(),
+			nn.Linear(self.params['layer_size'], self.params['layer_size']),
+			nn.ReLU(),
+			nn.Linear(self.params['layer_size'], self.params['layer_size']),
+			nn.ReLU(),
+			nn.Linear(self.params['layer_size'], self.N),
+		)
 
 		self.location_module = nn.Sequential(
 			nn.Linear(self.state_size, self.params['layer_size']),
@@ -160,68 +83,27 @@ class Net(nn.Module):
 
 		self.criterion = nn.MSELoss()
 
-		self.params_dic=[]
-		self.params_dic.append({'params': self.value_side1_parameters, 'lr': self.params['learning_rate']})
-		self.params_dic.append({'params': self.value_side2_parameters, 'lr': self.params['learning_rate']})
-		
-		self.params_dic.append({'params': self.value_side3_parameters, 'lr': self.params['learning_rate']})
-		self.params_dic.append({'params': self.value_side4_parameters, 'lr': self.params['learning_rate']})
-
-		self.params_dic.append({'params': self.location_module.parameters(), 'lr': self.params['learning_rate_location_side']})
+		self.params_dic = [
+			{'params': self.value_module.parameters(), 'lr': self.params['learning_rate']},
+			{'params': self.location_module.parameters(), 'lr': self.params['learning_rate_location_side']}
+		]
 
 		self.optimizer = optim.RMSprop(self.params_dic)
 
-	def forward(self, s, a):
-		'''
-			given a batch of s,a compute Q(s,a)
-		'''
-		centroid_values = self.get_centroid_values(s) # [batch_dim x N]
-		centroid_locations = self.new_get_all_centroids_batch_mode(s)
-		centroid_weights = new_rbf_function(centroid_locations, a, self.beta, self.N)
-		output = torch.mul(centroid_weights,centroid_values)
-		output = output.sum(1,keepdim=True)
-		_print(2, "Forward output shape: {}".format(output.shape))
-		return output
+		self.to(self.device)
 
 	def get_centroid_values(self, s):
 		'''
 			given a batch of s, get V(s)_i for i in 1 through N
 		'''
-		temp = F.relu(self.value_side1(s))
-		temp = F.relu(self.value_side2(temp))
-		temp = F.relu(self.value_side3(temp))
-		centroid_values = self.value_side4(temp)
-
+		centroid_values = self.value_module(s)
 		_print(2, "centroid values shape: {}".format(centroid_values.shape))
-
 		return centroid_values
-
 
 	def new_get_all_centroids_batch_mode(self, s):
 		centroid_locations = self.max_a * self.location_module(s)
 		return centroid_locations
-
-
-	def get_best_centroid_batch(self, s):
-		'''
-			given a batch of states s
-			determine max_{a} Q(s,a)
-		'''
-		all_centroids = self.get_all_centroids_batch_mode(s)
-		values = self.get_centroid_values(s).unsqueeze(2)
-		weights = rbf_function_single_batch_mode(all_centroids, 
-												 self.beta, 
-												 self.N, 
-												 self.params['norm_smoothing'])
-		allq = torch.bmm(weights, values).squeeze(2)
-		best,indices = allq.max(1)
-		if s.shape[0] == 1: #the function is called for a single state s
-			index_star = indices.cpu().data.numpy()[0]
-			a = list(all_centroids[index_star].cpu().data.numpy()[0])
-			return best.cpu().data.numpy(), a
-		else: #batch mode, for update
-			return best.cpu().data.numpy()
-
+	
 	def new_get_best_centroid_batch(self, s):
 		"""Doing a new one because I want to be able to directly compare the results."""
 		'''
@@ -230,7 +112,7 @@ class Net(nn.Module):
 		'''
 		all_centroids = self.new_get_all_centroids_batch_mode(s)
 		values = self.get_centroid_values(s)
-		weights = new_rbf_function_single_batch_mode(all_centroids, self.beta, self.N)
+		weights = rbf_function(all_centroids, all_centroids, self.beta) # [batch x N x N]
 		allq = torch.bmm(weights, values.unsqueeze(2)).squeeze(2) # bs x num_centroids
 		# a -> all_centroids[idx] such that idx is max(dim=1) in allq
 		# a = torch.gather(all_centroids, dim=1, index=indices)
@@ -243,8 +125,20 @@ class Net(nn.Module):
 		else:
 			return best, None 
 
+	def forward(self, s, a):
+		'''
+			given a batch of s,a compute Q(s,a)
+		'''
+		centroid_values = self.get_centroid_values(s) # [batch_dim x N]
+		centroid_locations = self.new_get_all_centroids_batch_mode(s)
+		centroid_weights = rbf_function(centroid_locations, a.unsqueeze(dim=1), self.beta) # [batch x N x 1]
+		output = torch.mul(centroid_weights.squeeze(-1), centroid_values) # [batch x N]
+		output = output.sum(1,keepdim=True) # [batch x 1]
+		_print(2, "Forward output shape: {}".format(output.shape))
+		return output
+
 	def e_greedy_policy(self,s,episode,train_or_test):
-		epsilon=1./numpy.power(episode,1./self.params['policy_parameter'])
+		epsilon=1.0/numpy.power(episode, 1.0/self.params['policy_parameter'])
 
 		if train_or_test=='train' and random.random() < epsilon:
 			a = self.env.action_space.sample()
@@ -252,26 +146,27 @@ class Net(nn.Module):
 		else:
 			self.eval()
 			s_matrix = numpy.array(s).reshape(1,self.state_size)
-			# q,a = self.new_get_best_centroid_batch( torch.FloatTensor(s_matrix).to(device))
 			with torch.no_grad():
-				_, a = self.new_get_best_centroid_batch(torch.FloatTensor(s_matrix).to(device))
+				_, a = self.new_get_best_centroid_batch(torch.FloatTensor(s_matrix).to(self.device))
 				a = a.cpu().numpy()
 			self.train()
 			return a
 
 	def update(self, target_Q, count):
 
-		if len(self.buffer_object.storage)<self.params['batch_size']:
+		if len(self.buffer_object.storage) < self.params['batch_size']:
 			return 0
 		else:
 			pass
 		s_matrix, a_matrix, r_matrix, done_matrix, sp_matrix = self.buffer_object.sample(self.params['batch_size'])
-		r_matrix=numpy.clip(r_matrix,a_min=-self.params['reward_clip'],a_max=self.params['reward_clip'])
+		r_matrix=numpy.clip(r_matrix, a_min = -self.params['reward_clip'], a_max = self.params['reward_clip'])
 
-		s_matrix, a_matrix, r_matrix = torch.FloatTensor(s_matrix).to(device), torch.FloatTensor(a_matrix).to(device), torch.FloatTensor(r_matrix).to(device)
-		done_matrix, sp_matrix = torch.FloatTensor(done_matrix).to(device), torch.FloatTensor(sp_matrix).to(device)
+		s_matrix = torch.FloatTensor(s_matrix).to(self.device)
+		a_matrix = torch.FloatTensor(a_matrix).to(self.device)
+		r_matrix = torch.FloatTensor(r_matrix).to(self.device)
+		done_matrix = torch.FloatTensor(done_matrix).to(self.device)
+		sp_matrix = torch.FloatTensor(sp_matrix).to(self.device)
 
-		# Q_star = target_Q.new_get_best_centroid_batch(sp_matrix)
 		Q_star, _ = target_Q.new_get_best_centroid_batch(sp_matrix)
 		Q_star = Q_star.reshape((self.params['batch_size'],-1))
 		with torch.no_grad():
@@ -283,16 +178,21 @@ class Net(nn.Module):
 		self.optimizer.step()
 		self.zero_grad()
 		utils_for_q_learning.sync_networks(target = target_Q,
-										   online = self, 
-										   alpha = self.params['target_network_learning_rate'], 
-										   copy = False)
+				online = self,
+				alpha = self.params['target_network_learning_rate'],
+				copy = False)
 		return loss.cpu().data.numpy()
 
 
 
 if __name__=='__main__':
-	print(torch.cuda.is_available())
-	hyper_parameter_name=sys.argv[1]
+	if torch.cuda.is_available():
+		device = torch.device("cuda")
+		print("Running on the GPU")
+	else:
+		device = torch.device("cpu")
+		print("Running on the CPU")
+	hyper_parameter_name = sys.argv[1]
 	alg='rbf'
 	params=utils_for_q_learning.get_hyper_parameters(hyper_parameter_name,alg)
 	params['hyper_parameters_name']=hyper_parameter_name
@@ -300,79 +200,14 @@ if __name__=='__main__':
 	#env = gym.wrappers.Monitor(env, 'videos/'+params['env_name']+"/", video_callable=lambda episode_id: episode_id%10==0,force = True)
 	params['env']=env
 	params['seed_number']=int(sys.argv[2])
-	testing = len(sys.argv) > 3 and sys.argv[3] == "--test"
 	utils_for_q_learning.set_random_seed(params)
-	s0=env.reset()
+	s0 = env.reset()
 	utils_for_q_learning.action_checker(env)
-	Q_object = Net(params,env,state_size=len(s0),action_size=len(env.action_space.low)).to(device)
-	Q_object_target = Net(params,env,state_size=len(s0),action_size=len(env.action_space.low)).to(device)
+	Q_object = Net(params, env, state_size=len(s0), action_size=len(env.action_space.low), device=device)
+	Q_object_target = Net(params, env, state_size=len(s0), action_size=len(env.action_space.low), device=device)
 	Q_object_target.eval()
 
 	utils_for_q_learning.sync_networks(target = Q_object_target, online = Q_object, alpha = params['target_network_learning_rate'], copy = True)
-
-
-	if testing:
-		"""
-		Comparing the new versions with the old
-		1. new_get_all_centroids_batch_mode (one state input and multiple)
-		2. new_get_best_centroid_batch (one state input and multiple)
-		3. Get rid of the "single" version of rbf_function, but assert that the batch way is the same plus a state dim.
-		"""
-
-		Q_object.eval()
-
-		s = env.reset()
-
-		one_state_batch_np = numpy.array([s])
-		many_state_batch_np = numpy.array([s for _ in range(256)])
-
-		one_state_batch_torch = torch.as_tensor(one_state_batch_np, dtype=torch.float32, device=device)
-		many_state_batch_torch = torch.as_tensor(many_state_batch_np, dtype=torch.float32, device=device)
-
-		one_centroid_old = Q_object.get_all_centroids_batch_mode(one_state_batch_torch)
-		one_centroid_new = Q_object.new_get_all_centroids_batch_mode(one_state_batch_torch)
-
-		# mapping back to old version
-		one_centroid_new = one_centroid_new.permute(1, 0, 2)
-		one_centroid_new = list(torch.split(one_centroid_new, split_size_or_sections=1, dim=0))
-		one_centroid_new = [c.squeeze(0) for c in one_centroid_new]
-
-		assert len(one_centroid_old) == len(one_centroid_new)
-		for i in range(len(one_centroid_old)):
-			assert torch.equal(one_centroid_old[i], one_centroid_new[i]), "{}  {}".format(one_centroid_old[i], one_centroid_new[i])
-
-
-		many_centroid_old = Q_object.get_all_centroids_batch_mode(many_state_batch_torch)
-		many_centroid_new = Q_object.new_get_all_centroids_batch_mode(many_state_batch_torch)
-
-		# mapping back to old version
-		many_centroid_new = many_centroid_new.permute(1, 0, 2)
-		many_centroid_new = list(torch.split(many_centroid_new, split_size_or_sections=1, dim=0))
-		many_centroid_new = [c.squeeze(0) for c in many_centroid_new]
-
-		assert len(many_centroid_old) == len(many_centroid_new)
-		for i in range(len(many_centroid_old)):
-			assert torch.equal(many_centroid_old[i], many_centroid_new[i])
-
-		# return of old is value, action. value is numpy array (  dim (1, )  ), action is a list of one numpy array.
-		one_best_value_old, one_best_action_old = Q_object.get_best_centroid_batch(one_state_batch_torch) # return value, action.
-		one_best_value_new, one_best_action_new = Q_object.new_get_best_centroid_batch(one_state_batch_torch)
-
-		one_best_value_new = one_best_value_new.cpu().detach()
-		one_best_action_new = list(one_best_action_new.cpu().detach().numpy())
-		numpy.testing.assert_almost_equal(one_best_value_old, one_best_value_new)
-		assert one_best_value_old.shape == (1,)
-		assert one_best_action_old == one_best_action_new
-
-		many_best_value_old = Q_object.get_best_centroid_batch(many_state_batch_torch) # return value, action.
-		many_best_value_new, _ = Q_object.new_get_best_centroid_batch(many_state_batch_torch)
-
-		many_best_value_new = many_best_value_new.cpu().detach()
-		numpy.testing.assert_almost_equal(many_best_value_old, many_best_value_new)
-
-
-		print("Unit Tests Passed!")
-		exit()
 
 	import time
 
@@ -382,7 +217,7 @@ if __name__=='__main__':
 	all_times_per_updates = []
 	for episode in range(params['max_episode']):
 
-		Q_this_episode = Net(params,env,state_size=len(s0),action_size=len(env.action_space.low))
+		Q_this_episode = Net(params,env,state_size=len(s0),action_size=len(env.action_space.low), device=device)
 		utils_for_q_learning.sync_networks(target = Q_this_episode, online = Q_object, alpha = params['target_network_learning_rate'], copy = True)
 		Q_this_episode.eval()
 
