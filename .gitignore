@@ -2,3 +2,6 @@
 *pycache*
 *.txt
 *.out
+.onager/ 
+.style.yapf
+.idea/

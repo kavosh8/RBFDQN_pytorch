@@ -1,4 +1,4 @@
-import os,sys,re,time
+import os, sys, re, time
 import os.path
 
 bash_script = '''#!/bin/bash
@@ -19,20 +19,19 @@ python RBFDQN.py {} {}
 if not os.path.exists('pbs_files'):
 	os.makedirs('pbs_files')
 
-min_seed=0
-max_seed=5
+min_seed = 0
+max_seed = 5
 
-for seed_num in range(min_seed,max_seed):
+for seed_num in range(min_seed, max_seed):
 	for domain in range(3):
 		for setting in range(2):
-			hyper_parameter_name=domain*10+setting
-			outfile="pbs_files/RBFDQN{}_{}.pbs".format(str(hyper_parameter_name),
-														  str(seed_num)
-														 )
-			output=open(outfile, 'w')
-			output.write(bash_script.format(str(hyper_parameter_name),str(seed_num)))
-												
+			hyper_parameter_name = domain * 10 + setting
+			outfile = "pbs_files/RBFDQN{}_{}.pbs".format(str(hyper_parameter_name),
+			                                             str(seed_num))
+			output = open(outfile, 'w')
+			output.write(bash_script.format(str(hyper_parameter_name), str(seed_num)))
+
 			output.close()
-			cmd="sbatch {}".format(outfile)
+			cmd = "sbatch {}".format(outfile)
 			os.system(cmd)
 			time.sleep(.01)
