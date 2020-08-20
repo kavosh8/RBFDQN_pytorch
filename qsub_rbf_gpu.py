@@ -14,17 +14,18 @@ module load cudnn/7.0
 module load opengl/mesa-12.0.6
 module load ffmpeg/4.0.1
 python RBFDQN.py {} {}
+echo "prog ended at: $(date)"
 '''
 #export LD_LIBRARY_PATH=$LD_LIBRARY_PATH/home/kasadiat/.mujoco/mujoco200/bin s
 if not os.path.exists('pbs_files'):
 	os.makedirs('pbs_files')
 
 min_seed=0
-max_seed=5
+max_seed=1
 
 for seed_num in range(min_seed,max_seed):
-	for domain in [3]:
-		for setting in range(3):
+	for domain in [0]:
+		for setting in range(1):
 			hyper_parameter_name=domain*10+setting
 			outfile="pbs_files/RBFDQN{}_{}.pbs".format(str(hyper_parameter_name),
 														  str(seed_num)
