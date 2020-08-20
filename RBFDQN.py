@@ -12,6 +12,25 @@ import torch.optim as optim
 import numpy
 import pickle
 
+def rbf_function_on_action(centroid_locations, action, beta):
+	'''
+	centroid_locations: Tensor [batch x num_centroids (N) x a_dim (action_size)]
+	action_set: Tensor [batch x a_dim (action_size)]
+	beta: float
+		- Parameter for RBF function
+
+	Description: Computes the RBF function given centroid_locations and one action
+	'''
+	assert len(centroid_locations.shape) == 3, "Must pass tensor with shape: [batch x N x a_dim]"
+	assert len(action.shape) == 2, "Must pass tensor with shape: [batch x a_dim]"
+
+	diff_norm = centroid_locations - action.unsqueeze(dim=1).expand_as(centroid_locations)
+	diff_norm = diff_norm ** 2	
+	diff_norm = torch.sum(diff_norm, dim=2)
+	diff_norm = torch.sqrt(diff_norm + 1e-7)
+	diff_norm = diff_norm * beta * -1
+	weights = F.softmax(diff_norm, dim=1)  # batch x N
+	return weights
 
 def rbf_function(centroid_locations, action_set, beta):
 	'''
@@ -127,9 +146,9 @@ class Net(nn.Module):
 		'''
 		centroid_values = self.get_centroid_values(s)  # [batch_dim x N]
 		centroid_locations = self.get_centroid_locations(s)
-		centroid_weights = rbf_function(centroid_locations, a.unsqueeze(dim=1),
-		                                self.beta)  # [batch x N x 1]
-		output = torch.mul(centroid_weights.squeeze(-1), centroid_values)  # [batch x N]
+		# [batch x N]
+		centroid_weights = rbf_function_on_action(centroid_locations, a, self.beta)
+		output = torch.mul(centroid_weights, centroid_values)  # [batch x N]
 		output = output.sum(1, keepdim=True)  # [batch x 1]
 		return output
 
