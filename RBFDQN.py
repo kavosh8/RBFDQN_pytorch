@@ -64,6 +64,7 @@ class Net(nn.Module):
 
 		self.buffer_object = buffer_class.buffer_class(
 		    max_length=self.params['max_buffer_size'],
+		    env=self.env,
 		    seed_number=self.params['seed_number'])
 
 		self.state_size, self.action_size = state_size, action_size

@@ -1,37 +1,25 @@
 import numpy
-from collections import deque
+from cpprb import ReplayBuffer, create_env_dict, create_before_add_func
 import random
 
 
 class buffer_class:
-	def __init__(self, max_length, seed_number):
-		self.storage = deque(maxlen=max_length)
+	def __init__(self, max_length, seed_number, env):
+		env_dict = create_env_dict(env)
+		self.before_add = create_before_add_func(env)
+		self.storage = ReplayBuffer(max_length, env_dict)
 
 	def append(self, s, a, r, done, sp):
-		dic = {}
-		dic['s'] = s
-		dic['a'] = a
-		dic['r'] = r
-		if done == True:
-			dic['done'] = 1
-		else:
-			dic['done'] = 0
-		dic['sp'] = sp
-		self.storage.append(dic)
+		self.storage.add(**self.before_add(obs=s, act=a, rew=r, done=done, next_obs=sp))
 
 	def sample(self, batch_size):
-		batch = random.sample(self.storage, batch_size)
-		s_li = [b['s'] for b in batch]
-		sp_li = [b['sp'] for b in batch]
-		r_li = [b['r'] for b in batch]
-		done_li = [b['done'] for b in batch]
-		a_li = [b['a'] for b in batch]
-		s_matrix = numpy.array(s_li).reshape(batch_size, -1)
-		a_matrix = numpy.array(a_li).reshape(batch_size, -1)
-		r_matrix = numpy.array(r_li).reshape(batch_size, 1)
-		sp_matrix = numpy.array(sp_li).reshape(batch_size, -1)
-		done_matrix = numpy.array(done_li).reshape(batch_size, 1)
+		batch = self.storage.sample(batch_size)
+		s_matrix = batch['obs']
+		a_matrix = batch['act']
+		r_matrix = batch['rew']
+		done_matrix = batch['done']
+		sp_matrix = batch['next_obs']
 		return s_matrix, a_matrix, r_matrix, done_matrix, sp_matrix
 
 	def __len__(self):
-		return len(self.storage)
+		return self.storage.get_stored_size()
