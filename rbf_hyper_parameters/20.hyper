@@ -15,4 +15,3 @@ policy_parameter,2.75,float
 norm_smoothing,0.00001,float
 updates_per_episode,200,integer
 dropout_rate,0.4,float
-num_stored_policies,1,integer
