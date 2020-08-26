@@ -11,7 +11,7 @@ def truncate(li):
 
 
 def smooth(li):
-	window = 1
+	window = 2
 	y = li
 	y_smooth = [numpy.mean(y[max(x - window, 0):x + window]) for x in range(len(y))]
 	return y_smooth
@@ -58,17 +58,17 @@ labels = [
     '200 updates less target updates'
 ]
 colors = ['blue', 'orange', 'brown', 'black', 'green', 'blue', 'black', 'purple']
-for problem in [1]:
+for problem in range(6):
 	plt.subplot(3, 2, problem + 1)
 	print(problems_name[problem])
 	#for setting in range(9):
 	
 	
-	for setting in [6,7]:
+	for setting in [0,1,]:
 		hyper_parameter_name = str(problem) + str(setting)
 		acceptable_len = 00
 		li = []
-		for seed_num in range(5):
+		for seed_num in range(1):
 			try:
 				temp = numpy.loadtxt("rbf_results/" + str(hyper_parameter_name) +
 				                     "/loss_" + str(seed_num) + ".txt")
