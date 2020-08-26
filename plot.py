@@ -35,9 +35,9 @@ problems_name = [
     'Pendulum',
     'LunarLander',
     'Bipedal',
-    'Ant',
-    'Cheetah',
     'Hopper',
+    'Cheetah',
+    'Ant',
     'InvertedDoublePendulum',
     'InvertedPendulum',
     'Reacher'
@@ -64,7 +64,7 @@ for problem in range(6):
 	#for setting in range(9):
 	
 	
-	for setting in [0]:
+	for setting in range(4):
 		hyper_parameter_name = str(problem) + str(setting)
 		acceptable_len = 00
 		li = []
@@ -89,6 +89,6 @@ for problem in range(6):
 		#plt.ylim([ylim_down[problem],ylim_up[problem]])
 		#plt.yticks([ylim_down[problem],ylim_up[problem]])
 	plt.title(problems_name[problem])
-	plt.legend()
+	#plt.legend()
 plt.subplots_adjust(wspace=0.5, hspace=1)
 plt.show()
