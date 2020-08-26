@@ -103,8 +103,16 @@ class Net(nn.Module):
 		                       'params': self.location_module.parameters(),
 		                       'lr': self.params['learning_rate_location_side']
 		                   }]
+		try:
+			if self.params['optimizer'] == 'RMSprop':
+				self.optimizer = optim.RMSprop(self.params_dic)
+			elif self.params['optimizer'] == 'Adam':
+				self.optimizer = optim.Adam(self.params_dic)
+			else:
+				print('unknown optimizer ....')
+		except:
+			print("no optimizer specified ... ")
 
-		self.optimizer = optim.RMSprop(self.params_dic)
 
 		self.to(self.device)
 
@@ -244,7 +252,7 @@ if __name__ == '__main__':
 	all_times_per_steps = []
 	all_times_per_updates = []
 	for episode in range(params['max_episode']):
-
+		print("episode {}".format(episode))
 		Q_this_episode = Net(params,
 		                     env,
 		                     state_size=len(s0),
