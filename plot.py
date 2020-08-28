@@ -58,22 +58,22 @@ labels = [
     '200 updates less target updates'
 ]
 colors = ['blue', 'orange', 'brown', 'black', 'green', 'blue', 'black', 'purple']
-for problem in range(6):
+for problem in range(6 ):
 	plt.subplot(3, 2, problem + 1)
 	print(problems_name[problem])
 	#for setting in range(9):
 	
 	
-	for setting in range(4):
+	for setting in [0]:
 		hyper_parameter_name = str(problem) + str(setting)
 		acceptable_len = 00
 		li = []
-		for seed_num in range(4):
+		for seed_num in range(10):
 			try:
 				temp = numpy.loadtxt("rbf_results/" + str(hyper_parameter_name) +
 				                     "/loss_" + str(seed_num) + ".txt")
 				temp = numpy.loadtxt("rbf_results/" + str(hyper_parameter_name) +"/" + str(seed_num) + ".txt")
-				#plt.plot(smooth(temp),lw=1,color=colors[setting%len(colors)])
+				plt.plot(smooth(temp),lw=1,color=colors[setting%len(colors)])
 				if len(temp) > acceptable_len:
 					li.append(temp)
 					
@@ -88,7 +88,7 @@ for problem in range(6):
 		plt.plot(smooth(numpy.mean(li, axis=0)), label=setting, lw=4, color=colors[setting%len(colors)])
 		#plt.ylim([ylim_down[problem],ylim_up[problem]])
 		#plt.yticks([ylim_down[problem],ylim_up[problem]])
-	plt.title(problems_name[problem])
+	#plt.title(problems_name[problem])
 	#plt.legend()
 plt.subplots_adjust(wspace=0.5, hspace=1)
 plt.show()
