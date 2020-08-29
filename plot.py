@@ -58,14 +58,14 @@ labels = [
     '200 updates less target updates'
 ]
 colors = ['blue', 'orange', 'brown', 'black', 'green', 'yellow', 'black', 'purple']
-for problem in range(6):
+for problem in range(4,5):
 	plt.subplot(3, 2, problem + 1)
 	print(problems_name[problem])
 	#for setting in range(9):
 	
 	
-	for setting in range(1):
-	#for setting in [0,2,5]:
+	#for setting in range(8):
+	for setting in [0,1,2,3,4,5,6,7,8,9]:
 		hyper_parameter_name = str(problem) + str(setting)
 		acceptable_len = 00
 		li = []
@@ -78,14 +78,14 @@ for problem in range(6):
 				if len(temp) > acceptable_len:
 					li.append(temp)
 					
-					print(hyper_parameter_name,seed_num,numpy.mean(temp[-10:]),len(temp))	
+					print(hyper_parameter_name,seed_num,numpy.mean(temp[-1:]),len(temp))	
 			except:
 				#print("problem")
 				pass
 		#print([len(x) for x in li])
 		li = truncate(li)
 		print(hyper_parameter_name,len(li[0]),
-		      numpy.mean(numpy.mean(li, axis=0)[-3:]),numpy.mean(li),len(li))
+		      numpy.mean(numpy.mean(li, axis=0)[-1:]),numpy.mean(li),len(li))
 		plt.plot(smooth(numpy.mean(li, axis=0)), label=setting, lw=5, color=colors[setting%len(colors)])
 		plt.tick_params( labelright=True)
 		#plt.ylim([ylim_down[problem],ylim_up[problem]])
