@@ -79,14 +79,27 @@ class Net(nn.Module):
 		    nn.Linear(self.params['layer_size'], self.N),
 		)
 
-		self.location_module = nn.Sequential(
-		    nn.Linear(self.state_size, self.params['layer_size']),
-		    nn.Dropout(p=self.params['dropout_rate']),
-		    nn.ReLU(),
-		    nn.Linear(self.params['layer_size'], self.action_size * self.N),
-		    utils_for_q_learning.Reshape(-1, self.N, self.action_size),
-		    nn.Tanh(),
-		)
+		if self.params['num_layers_action_side'] == 1:
+			self.location_module = nn.Sequential(
+			    nn.Linear(self.state_size, self.params['layer_size_action_side']),
+			    nn.Dropout(p=self.params['dropout_rate']),
+			    nn.ReLU(),
+			    nn.Linear(self.params['layer_size'], self.action_size * self.N),
+			    utils_for_q_learning.Reshape(-1, self.N, self.action_size),
+			    nn.Tanh(),
+			)
+		elif self.params['num_layers_action_side'] == 2:
+			self.location_module = nn.Sequential(
+			    nn.Linear(self.state_size, self.params['layer_size_action_side']),
+			    nn.Dropout(p=self.params['dropout_rate']),
+			    nn.ReLU(),
+			    nn.Linear(self.params['layer_size_action_side'], self.params['layer_size_action_side']),
+			    nn.Dropout(p=self.params['dropout_rate']),
+			    nn.ReLU(),		    
+			    nn.Linear(self.params['layer_size'], self.action_size * self.N),
+			    utils_for_q_learning.Reshape(-1, self.N, self.action_size),
+			    nn.Tanh(),
+			)
 
 		torch.nn.init.xavier_uniform_(self.location_module[0].weight)
 		torch.nn.init.zeros_(self.location_module[0].bias)
