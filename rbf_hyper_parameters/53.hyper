@@ -19,4 +19,4 @@ updates_per_episode,1000,integer
 dropout_rate,0.4,float
 optimizer,RMSprop,string
 policy_type,gaussian,string
-noise,0.1,float
+noise,0.25,float
