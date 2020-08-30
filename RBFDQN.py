@@ -235,6 +235,7 @@ class Net(nn.Module):
 			weights = rbf_function(all_centroids, all_centroids, self.beta)  # [batch x N x N]
 			allq = torch.bmm(weights, values.unsqueeze(2)).squeeze(2)  # bs x num_centroids
 			probs = torch.nn.Softmax(dim=1)(allq*self.params['omega']).cpu()[0]
+			probs = probs/numpy.sum(probs)
 			ind = numpy.random.choice(self.params['num_points'], size=1, p=probs)[0]
 			a = all_centroids[0,ind].cpu().numpy()
 		self.train()
