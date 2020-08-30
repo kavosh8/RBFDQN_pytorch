@@ -320,7 +320,7 @@ if __name__ == '__main__':
 			if params['policy_type'] == 'e_greedy':
 				a = Q_object.e_greedy_policy(s, episode + 1, 'train')
 			elif params['policy_type'] == 'e_greedy_gaussian':
-				a = Q_object.e_greedy_gaussian(s, episode + 1, 'train')
+				a = Q_object.e_greedy_gaussian_policy(s, episode + 1, 'train')
 			elif params['policy_type'] == 'gaussian':
 				a = Q_object.gaussian_policy(s, episode + 1, 'train')			
 			sp, r, done, _ = env.step(numpy.array(a))

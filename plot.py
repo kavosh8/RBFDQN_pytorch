@@ -65,12 +65,12 @@ for problem in range(4,6):
 	#for setting in range(9):
 	
 	
-	#for setting in range(9):
-	for setting in [0,3,4]:
+	for setting in range(9):
+	#for setting in [0,3,4]:
 		hyper_parameter_name = str(problem) + str(setting)
 		acceptable_len = 00
 		li = []
-		for seed_num in range(9):
+		for seed_num in range(2):
 			try:
 				temp = numpy.loadtxt("rbf_results/" + str(hyper_parameter_name) +
 				                     "/loss_" + str(seed_num) + ".txt")
