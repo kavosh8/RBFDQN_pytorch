@@ -70,7 +70,7 @@ for problem in range(4,6):
 		hyper_parameter_name = str(problem) + str(setting)
 		acceptable_len = 00
 		li = []
-		for seed_num in range(2):
+		for seed_num in range(10):
 			try:
 				temp = numpy.loadtxt("rbf_results/" + str(hyper_parameter_name) +
 				                     "/loss_" + str(seed_num) + ".txt")
