@@ -65,7 +65,7 @@ for problem in range(4,6):
 	#for setting in range(9):
 	
 	
-	for setting in range(4):
+	for setting in [0,1]:
 	#for setting in [0,3,4]:
 		hyper_parameter_name = str(problem) + str(setting)
 		acceptable_len = 00
