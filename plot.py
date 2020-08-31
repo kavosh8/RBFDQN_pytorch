@@ -56,8 +56,8 @@ for problem in [5]:
 	#for setting in range(9):
 	
 	
-	for setting in range(5):
-	#for setting in [0]:
+	#for setting in range(3):
+	for setting in [0,2]:
 		hyper_parameter_name = str(problem) + str(setting)
 		acceptable_len = 00
 		li = []
@@ -81,6 +81,6 @@ for problem in [5]:
 		#plt.ylim([ylim_down[problem],ylim_up[problem]])
 		#plt.yticks([ylim_down[problem],ylim_up[problem]])
 	plt.title(problems_name[problem])
-	#plt.legend()
+	plt.legend()
 plt.subplots_adjust(wspace=0.5, hspace=1)
 plt.show()
