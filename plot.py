@@ -22,15 +22,6 @@ def compute_fina_mean_and_std(li):
 	print(numpy.mean(li_last))
 	print(numpy.std(li_last) / 20)
 
-
-#[20,31,40,45]
-#for hyper_parameter_name in ['10','11','12','13','14','15','16','17','lunar_old']:
-#for hyper_parameter_name in [0,1,2,3]:
-#for hyper_parameter_name in [20,21,22,23]:
-#for hyper_parameter_name in range(40,55):
-#for hyper_parameter_name in range(70,82):
-#for hyper_parameter_name in range(82,85):
-#for hyper_parameter_name in range(85,100):
 problems_name = [
     'Pendulum',
     'LunarLander',
@@ -58,24 +49,22 @@ labels = [
     '200 updates less target updates'
 ]
 colors = ['blue', 'orange', 'brown', 'black', 'green', 'yellow', 'black', 'purple']
-for problem in range(5,6):
+for problem in [5]:
 #for problem in range(4,5):
 	plt.subplot(3, 2, problem + 1)
 	print(problems_name[problem])
 	#for setting in range(9):
 	
 	
-	#for setting in range(9):
-	for setting in [0,3,4]:
+	for setting in range(5):
+	#for setting in [0]:
 		hyper_parameter_name = str(problem) + str(setting)
 		acceptable_len = 00
 		li = []
 		for seed_num in range(10):
 			try:
-				temp = numpy.loadtxt("rbf_results/" + str(hyper_parameter_name) +
-				                     "/loss_" + str(seed_num) + ".txt")
 				temp = numpy.loadtxt("rbf_results/" + str(hyper_parameter_name) +"/" + str(seed_num) + ".txt")
-				#plt.plot(smooth(temp),lw=1,color=colors[setting%len(colors)])
+				plt.plot(smooth(temp),lw=1,color=colors[setting%len(colors)])
 				if len(temp) > acceptable_len:
 					li.append(temp)
 					
