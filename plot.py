@@ -49,14 +49,10 @@ labels = [
     '200 updates less target updates'
 ]
 colors = ['blue', 'orange', 'brown', 'black', 'green', 'yellow', 'black', 'purple']
-for problem in [5]:
+for problem in [4,5]:
 #for problem in range(4,5):
 	plt.subplot(3, 2, problem + 1)
 	print(problems_name[problem])
-	#for setting in range(9):
-	
-	
-	#for setting in range(3):
 	for setting in [0,2]:
 		hyper_parameter_name = str(problem) + str(setting)
 		acceptable_len = 00
