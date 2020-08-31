@@ -65,7 +65,7 @@ for problem in range(4,6):
 	#for setting in range(9):
 	
 	
-	for setting in [0,1]:
+	for setting in [0,]:
 	#for setting in [0,3,4]:
 		hyper_parameter_name = str(problem) + str(setting)
 		acceptable_len = 00
@@ -75,7 +75,7 @@ for problem in range(4,6):
 				temp = numpy.loadtxt("rbf_results/" + str(hyper_parameter_name) +
 				                     "/loss_" + str(seed_num) + ".txt")
 				temp = numpy.loadtxt("rbf_results/" + str(hyper_parameter_name) +"/" + str(seed_num) + ".txt")
-				plt.plot(smooth(temp),lw=1,color=colors[setting%len(colors)])
+				#plt.plot(smooth(temp),lw=1,color=colors[setting%len(colors)])
 				if len(temp) > acceptable_len:
 					li.append(temp)
 					
