@@ -48,7 +48,7 @@ labels = [
     '200 updates less target updates',
     '200 updates less target updates'
 ]
-colors = ['blue', 'orange', 'brown', 'black', 'green', 'yellow', 'black', 'purple']
+colors = ['blue', 'black', 'brown', 'orange', 'green', 'yellow', 'black', 'purple']
 for problem in [4,5]:
 #for problem in range(4,5):
 	plt.subplot(3, 2, problem + 1)
@@ -77,6 +77,6 @@ for problem in [4,5]:
 		#plt.ylim([ylim_down[problem],ylim_up[problem]])
 		#plt.yticks([ylim_down[problem],ylim_up[problem]])
 	plt.title(problems_name[problem])
-	plt.legend()
+	#plt.legend()
 plt.subplots_adjust(wspace=0.5, hspace=1)
 plt.show()
