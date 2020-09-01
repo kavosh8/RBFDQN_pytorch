@@ -27,7 +27,7 @@ def rbf_function_on_action(centroid_locations, action, beta):
 	diff_norm = centroid_locations - action.unsqueeze(dim=1).expand_as(centroid_locations)
 	diff_norm = diff_norm ** 2	
 	diff_norm = torch.sum(diff_norm, dim=2)
-	diff_norm = torch.sqrt(diff_norm + 1e-7)
+	diff_norm = torch.sqrt(diff_norm )
 	diff_norm = diff_norm * beta * -1
 	weights = F.softmax(diff_norm, dim=1)  # batch x N
 	return weights
@@ -243,9 +243,15 @@ class Net(nn.Module):
 		sp_matrix = torch.from_numpy(sp_matrix).float().to(self.device)
 
 		# __import__('pdb').set_trace()
-		# self.eval()
-		_, a_star = self.get_best_qvalue_and_action(sp_matrix)
-		# q2 = self.forward(sp_matrix, a_star)
+		self.eval()
+		q1, a_star = self.get_best_qvalue_and_action(sp_matrix)
+		q2 = self.forward(sp_matrix, a_star)
+		q2 = q2.squeeze(-1)
+		print(q2.shape)
+		print(q1.shape)
+		print(q2-q1)
+		assert False
+
 		# __import__('pdb').set_trace()
 		Q_star = target_Q.forward(sp_matrix, a_star)
 		# Q_star, _ = target_Q.get_best_qvalue_and_action(sp_matrix)
