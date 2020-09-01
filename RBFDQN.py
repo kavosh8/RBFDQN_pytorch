@@ -155,12 +155,9 @@ class Net(nn.Module):
 		# a = torch.gather(all_centroids, dim=1, index=indices)
 		# (dim: bs x 1, dim: bs x action_dim)
 		best, indices = allq.max(dim=1)
-		if s.shape[0] == 1:
-			index_star = indices.item()
-			a = all_centroids[0, index_star]
-			return best, a
-		else:
-			return best, None
+		idx = indices.unsqueeze(-1).unsqueeze(-1).expand(-1, -1, all_centroids.shape[2]) 
+		a = torch.gather(all_centroids, 1, idx).squeeze(1)
+		return best, a
 
 	def forward(self, s, a):
 		'''
@@ -245,7 +242,13 @@ class Net(nn.Module):
 		done_matrix = torch.from_numpy(done_matrix).float().to(self.device)
 		sp_matrix = torch.from_numpy(sp_matrix).float().to(self.device)
 
-		Q_star, _ = target_Q.get_best_qvalue_and_action(sp_matrix)
+		# __import__('pdb').set_trace()
+		# self.eval()
+		_, a_star = self.get_best_qvalue_and_action(sp_matrix)
+		# q2 = self.forward(sp_matrix, a_star)
+		# __import__('pdb').set_trace()
+		Q_star = target_Q.forward(sp_matrix, a_star)
+		# Q_star, _ = target_Q.get_best_qvalue_and_action(sp_matrix)
 		Q_star = Q_star.reshape((self.params['batch_size'], -1))
 		with torch.no_grad():
 			y = r_matrix + self.params['gamma'] * (1 - done_matrix) * Q_star
