@@ -49,16 +49,16 @@ labels = [
     '200 updates less target updates'
 ]
 colors = ['blue', 'black', 'brown', 'orange', 'green', 'yellow', 'black', 'purple']
-for problem in [6]:
+for problem in [4]:
 #for problem in range(4,5):
 	plt.subplot(4, 2, problem + 1)
 	print(problems_name[problem])
-	#for setting in [0,2]:
-	for setting in range(4):
+	for setting in [0,2]:
+	#for setting in range(4):
 		hyper_parameter_name = str(problem) + str(setting)
 		acceptable_len = 00
 		li = []
-		for seed_num in range(10):
+		for seed_num in range(20):
 			try:
 				temp = numpy.loadtxt("rbf_results/" + str(hyper_parameter_name) +"/" + str(seed_num) + ".txt")
 				plt.plot(smooth(temp),lw=1,color=colors[setting%len(colors)])
