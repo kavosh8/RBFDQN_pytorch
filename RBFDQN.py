@@ -243,19 +243,12 @@ class Net(nn.Module):
 		done_matrix = torch.from_numpy(done_matrix).float().to(self.device)
 		sp_matrix = torch.from_numpy(sp_matrix).float().to(self.device)
 
-		# __import__('pdb').set_trace()
-		self.eval()
-		q1, a_star = self.get_best_qvalue_and_action(sp_matrix)
-		q2 = self.forward(sp_matrix, a_star)
-		q2 = q2.squeeze(-1)
-		print(q2.shape)
-		print(q1.shape)
-		print(q2-q1)
-		assert False
+                if self.params['double_dqn']:
+                    _, a_star = self.get_best_qvalue_and_action(sp_matrix)
+                    Q_star = target_Q.forward(sp_matrix, a_star)
+                else:
+                    Q_star, _ = target_Q.get_best_qvalue_and_action(sp_matrix)
 
-		# __import__('pdb').set_trace()
-		Q_star = target_Q.forward(sp_matrix, a_star)
-		# Q_star, _ = target_Q.get_best_qvalue_and_action(sp_matrix)
 		Q_star = Q_star.reshape((self.params['batch_size'], -1))
 		with torch.no_grad():
 			y = r_matrix + self.params['gamma'] * (1 - done_matrix) * Q_star
