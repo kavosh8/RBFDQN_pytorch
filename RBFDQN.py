@@ -12,7 +12,7 @@ import torch.optim as optim
 import numpy
 import pickle
 
-def rbf_function_on_action(centroid_locations, action, beta):
+def rbf_function_on_action(centroid_locations, action, beta, norm_smoothing):
 	'''
 	centroid_locations: Tensor [batch x num_centroids (N) x a_dim (action_size)]
 	action_set: Tensor [batch x a_dim (action_size)]
@@ -27,7 +27,7 @@ def rbf_function_on_action(centroid_locations, action, beta):
 	diff_norm = centroid_locations - action.unsqueeze(dim=1).expand_as(centroid_locations)
 	diff_norm = diff_norm ** 2	
 	diff_norm = torch.sum(diff_norm, dim=2)
-	diff_norm = torch.sqrt(diff_norm )
+	diff_norm = torch.sqrt(diff_norm + norm_smoothing)
 	diff_norm = diff_norm * beta * -1
 	weights = F.softmax(diff_norm, dim=1)  # batch x N
 	return weights
@@ -166,7 +166,8 @@ class Net(nn.Module):
 		centroid_values = self.get_centroid_values(s)  # [batch_dim x N]
 		centroid_locations = self.get_centroid_locations(s)
 		# [batch x N]
-		centroid_weights = rbf_function_on_action(centroid_locations, a, self.beta)
+		centroid_weights = rbf_function_on_action(centroid_locations, a, self.beta,
+                        params['norm_smoothing'])
 		output = torch.mul(centroid_weights, centroid_values)  # [batch x N]
 		output = output.sum(1, keepdim=True)  # [batch x 1]
 		return output
