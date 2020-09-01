@@ -29,6 +29,8 @@ def get_hyper_parameters(name, alg):
 				meta_params[parameter_name] = int(parameter_value)
 			elif parameter_type == 'float':
 				meta_params[parameter_name] = float(parameter_value)
+			elif parameter_type == 'bool':
+				meta_params[parameter_name] = bool(parameter_value)
 			else:
 				print("unknown parameter type ... aborting")
 				print(l)

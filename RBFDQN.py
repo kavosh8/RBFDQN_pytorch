@@ -278,7 +278,6 @@ if __name__ == '__main__':
 	params = utils_for_q_learning.get_hyper_parameters(hyper_parameter_name, alg)
 	params['hyper_parameters_name'] = hyper_parameter_name
 	env = gym.make(params['env_name'])
-	#env = gym.wrappers.Monitor(env, 'videos/'+params['env_name']+"/", video_callable=lambda episode_id: episode_id%10==0,force = True)
 	params['env'] = env
 	params['seed_number'] = int(sys.argv[2])
 	utils_for_q_learning.set_random_seed(params)
