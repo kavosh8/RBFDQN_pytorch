@@ -49,7 +49,7 @@ def sync_networks(target, online, alpha, copy=False):
 
 
 def save(li_returns, li_loss, params, alg):
-	directory = alg + "_results/" + params['hyper_parameters_name'] + '/'
+	directory = alg + "_results/" + params['hyper_parameters_name'] + '/' + params['runtag'] + '/'
 	if not os.path.exists(directory):
 		os.makedirs(directory)
 	numpy.savetxt(directory + str(params['seed_number']) + ".txt", li_returns)

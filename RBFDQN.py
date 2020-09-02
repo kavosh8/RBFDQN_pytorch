@@ -1,16 +1,17 @@
-import gym
 import sys
 import time
-import numpy
-import random
-import utils_for_q_learning, buffer_class
+import random	
+import argparse
 
+import gym
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 import numpy
 import pickle
+	
+import utils_for_q_learning, buffer_class
 
 def rbf_function_on_action(centroid_locations, action, beta, norm_smoothing):
 	'''
@@ -273,13 +274,21 @@ if __name__ == '__main__':
 	else:
 		device = torch.device("cpu")
 		print("Running on the CPU")
-	hyper_parameter_name = sys.argv[1]
+	parser = argparse.ArgumentParser(description='Rainbow')
+	parser.add_argument('--hyper', type=str, required=True, help='Hyper file name')
+	parser.add_argument('--seed', type=int, required=True, help='seed for exp')
+	parser.add_argument('--run-tag', type=str, required=True, help='Experiment ID')
+	
+	args = parser.parse_args()
+
+	hyper_parameter_name = args.hyper
 	alg = 'rbf'
 	params = utils_for_q_learning.get_hyper_parameters(hyper_parameter_name, alg)
 	params['hyper_parameters_name'] = hyper_parameter_name
+	params['runtag'] = args.run_tag
 	env = gym.make(params['env_name'])
 	params['env'] = env
-	params['seed_number'] = int(sys.argv[2])
+	params['seed_number'] = args.seed
 	utils_for_q_learning.set_random_seed(params)
 	s0 = env.reset()
 	utils_for_q_learning.action_checker(env)
