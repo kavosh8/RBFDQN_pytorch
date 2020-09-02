@@ -19,3 +19,4 @@ updates_per_episode,1000,integer
 dropout_rate,0.4,float
 optimizer,RMSprop,string
 policy_type,e_greedy,string
+double_dqn,true,bool
