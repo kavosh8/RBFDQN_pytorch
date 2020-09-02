@@ -243,11 +243,11 @@ class Net(nn.Module):
 		done_matrix = torch.from_numpy(done_matrix).float().to(self.device)
 		sp_matrix = torch.from_numpy(sp_matrix).float().to(self.device)
 
-                if self.params['double_dqn']:
-                    _, a_star = self.get_best_qvalue_and_action(sp_matrix)
-                    Q_star = target_Q.forward(sp_matrix, a_star)
-                else:
-                    Q_star, _ = target_Q.get_best_qvalue_and_action(sp_matrix)
+		if self.params['double_dqn']:
+			_, a_star = self.get_best_qvalue_and_action(sp_matrix)
+			Q_star = target_Q.forward(sp_matrix, a_star)
+		else:
+			Q_star, _ = target_Q.get_best_qvalue_and_action(sp_matrix)
 
 		Q_star = Q_star.reshape((self.params['batch_size'], -1))
 		with torch.no_grad():
