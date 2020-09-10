@@ -50,10 +50,10 @@ labels = [
 ]
 colors = ['blue', 'black', 'brown', 'orange', 'green', 'yellow', 'black', 'purple']
 #for problem in [4]:
-for problem in range(6):
+for problem in [1,2]:
 	plt.subplot(4, 2, problem + 1)
 	print(problems_name[problem])
-	for setting in [0]:
+	for setting in range(5,10):
 	#for setting in range(4):
 		hyper_parameter_name = str(problem) + str(setting)
 		acceptable_len = 00
@@ -61,7 +61,7 @@ for problem in range(6):
 		for seed_num in range(20):
 			try:
 				temp = numpy.loadtxt("rbf_results/" + str(hyper_parameter_name) +"/" + str(seed_num) + ".txt")
-				plt.plot(smooth(temp),lw=1,color=colors[setting%len(colors)])
+				#plt.plot(smooth(temp),lw=1,color=colors[setting%len(colors)])
 				if len(temp) > acceptable_len:
 					li.append(temp)
 					
