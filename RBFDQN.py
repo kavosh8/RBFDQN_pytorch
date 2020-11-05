@@ -340,7 +340,8 @@ if __name__ == '__main__':
 			loss = Q_object.update(Q_object_target, 1)
 			loss_li.append(loss)
 		episode += 1
-		if (steps % 1000 == 0) or (steps == params['max_step'] - 1):
+
+		if (steps % 5000 == 0) or (steps == params['max_step'] - 1):
 			temp = []
 			for _ in range(10):
 				s, G, done, t = env.reset(), 0, False, 0

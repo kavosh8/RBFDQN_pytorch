@@ -1,5 +1,5 @@
 env_name,Ant-v3,string
-max_episode,2000,integer
+max_step,1000000,integer
 num_layers,3,integer
 layer_size,512,integer
 num_layers_action_side,1,integer
