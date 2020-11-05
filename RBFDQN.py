@@ -12,6 +12,7 @@ import torch.optim as optim
 import numpy
 import pickle
 
+
 def rbf_function_on_action(centroid_locations, action, beta):
 	'''
 	centroid_locations: Tensor [batch x num_centroids (N) x a_dim (action_size)]
@@ -25,12 +26,13 @@ def rbf_function_on_action(centroid_locations, action, beta):
 	assert len(action.shape) == 2, "Must pass tensor with shape: [batch x a_dim]"
 
 	diff_norm = centroid_locations - action.unsqueeze(dim=1).expand_as(centroid_locations)
-	diff_norm = diff_norm ** 2	
+	diff_norm = diff_norm**2
 	diff_norm = torch.sum(diff_norm, dim=2)
 	diff_norm = torch.sqrt(diff_norm + 1e-7)
 	diff_norm = diff_norm * beta * -1
 	weights = F.softmax(diff_norm, dim=1)  # batch x N
 	return weights
+
 
 def rbf_function(centroid_locations, action_set, beta):
 	'''
@@ -84,7 +86,8 @@ class Net(nn.Module):
 			    nn.Linear(self.state_size, self.params['layer_size_action_side']),
 			    nn.Dropout(p=self.params['dropout_rate']),
 			    nn.ReLU(),
-			    nn.Linear(self.params['layer_size_action_side'], self.action_size * self.N),
+			    nn.Linear(self.params['layer_size_action_side'],
+			              self.action_size * self.N),
 			    utils_for_q_learning.Reshape(-1, self.N, self.action_size),
 			    nn.Tanh(),
 			)
@@ -93,10 +96,12 @@ class Net(nn.Module):
 			    nn.Linear(self.state_size, self.params['layer_size_action_side']),
 			    nn.Dropout(p=self.params['dropout_rate']),
 			    nn.ReLU(),
-			    nn.Linear(self.params['layer_size_action_side'], self.params['layer_size_action_side']),
+			    nn.Linear(self.params['layer_size_action_side'],
+			              self.params['layer_size_action_side']),
 			    nn.Dropout(p=self.params['dropout_rate']),
-			    nn.ReLU(),		    
-			    nn.Linear(self.params['layer_size_action_side'], self.action_size * self.N),
+			    nn.ReLU(),
+			    nn.Linear(self.params['layer_size_action_side'],
+			              self.action_size * self.N),
 			    utils_for_q_learning.Reshape(-1, self.N, self.action_size),
 			    nn.Tanh(),
 			)
@@ -125,7 +130,6 @@ class Net(nn.Module):
 				print('unknown optimizer ....')
 		except:
 			print("no optimizer specified ... ")
-
 
 		self.to(self.device)
 
@@ -210,7 +214,9 @@ class Net(nn.Module):
 				_, a = self.get_best_qvalue_and_action(s)
 				a = a.cpu().numpy()
 			self.train()
-			noise = numpy.random.normal(loc=0.0, scale=self.params['noise'], size=len(a))
+			noise = numpy.random.normal(loc=0.0,
+			                            scale=self.params['noise'],
+			                            size=len(a))
 			a = a + noise
 			return a
 
@@ -229,7 +235,6 @@ class Net(nn.Module):
 		noise = numpy.random.normal(loc=0.0, scale=self.params['noise'], size=len(a))
 		a = a + noise
 		return a
-
 
 	def update(self, target_Q, count):
 		if len(self.buffer_object) < self.params['batch_size']:
@@ -302,8 +307,10 @@ if __name__ == '__main__':
 	loss_li = []
 	all_times_per_steps = []
 	all_times_per_updates = []
-	for episode in range(params['max_episode']):
-		print("episode {}".format(episode))
+	steps = 0
+	episode = 0
+	while steps < params['max_step']:
+
 		Q_this_episode = Net(params,
 		                     env,
 		                     state_size=len(s0),
@@ -322,21 +329,18 @@ if __name__ == '__main__':
 			elif params['policy_type'] == 'e_greedy_gaussian':
 				a = Q_object.e_greedy_gaussian_policy(s, episode + 1, 'train')
 			elif params['policy_type'] == 'gaussian':
-				a = Q_object.gaussian_policy(s, episode + 1, 'train')			
+				a = Q_object.gaussian_policy(s, episode + 1, 'train')
 			sp, r, done, _ = env.step(numpy.array(a))
 			t = t + 1
 			done_p = False if t == env._max_episode_steps else done
 			Q_object.buffer_object.append(s, a, r, done_p, sp)
 			s = sp
-		#now update the Q network
-		loss = []
-		for count in range(params['updates_per_episode']):
-			temp = Q_object.update(Q_object_target, count)
-			loss.append(temp)
+			steps += 1
 
-		loss_li.append(numpy.mean(loss))
-
-		if (episode % 10 == 0) or (episode == params['max_episode'] - 1):
+			loss = Q_object.update(Q_object_target, 1)
+			loss_li.append(loss)
+		episode += 1
+		if (steps % 1000 == 0) or (steps == params['max_step'] - 1):
 			temp = []
 			for _ in range(10):
 				s, G, done, t = env.reset(), 0, False, 0
@@ -345,8 +349,7 @@ if __name__ == '__main__':
 					sp, r, done, _ = env.step(numpy.array(a))
 					s, G, t = sp, G + r, t + 1
 				temp.append(G)
-			print(
-			    "after {} episodes, learned policy collects {} average returns".format(
-			        episode, numpy.mean(temp)))
+			print("after {} steps, learned policy collects {} average returns".format(
+			    steps, numpy.mean(temp)))
 			G_li.append(numpy.mean(temp))
 			utils_for_q_learning.save(G_li, loss_li, params, alg)
