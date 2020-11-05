@@ -339,18 +339,18 @@ if __name__ == '__main__':
 
 			loss = Q_object.update(Q_object_target, 1)
 			loss_li.append(loss)
-		episode += 1
 
-		if (steps % 5000 == 0) or (steps == params['max_step'] - 1):
-			temp = []
-			for _ in range(10):
-				s, G, done, t = env.reset(), 0, False, 0
-				while done == False:
-					a = Q_object.e_greedy_policy(s, episode + 1, 'test')
-					sp, r, done, _ = env.step(numpy.array(a))
-					s, G, t = sp, G + r, t + 1
-				temp.append(G)
-			print("after {} steps, learned policy collects {} average returns".format(
-			    steps, numpy.mean(temp)))
-			G_li.append(numpy.mean(temp))
-			utils_for_q_learning.save(G_li, loss_li, params, alg)
+			if (steps % 5000 == 0) or (steps == params['max_step'] - 1):
+				temp = []
+				for _ in range(10):
+					s, G, done, t = env.reset(), 0, False, 0
+					while done == False:
+						a = Q_object.e_greedy_policy(s, episode + 1, 'test')
+						sp, r, done, _ = env.step(numpy.array(a))
+						s, G, t = sp, G + r, t + 1
+					temp.append(G)
+				print("after {} steps, learned policy collects {} average returns".
+				      format(steps, numpy.mean(temp)))
+				G_li.append(numpy.mean(temp))
+				utils_for_q_learning.save(G_li, loss_li, params, alg)
+		episode += 1
