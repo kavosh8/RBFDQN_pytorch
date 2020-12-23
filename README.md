@@ -1,6 +1,6 @@
-RBF-DQN Pytorch
+#### RBF-DQN Pytorch
 
-Implementation of RBF-DQN (see [paper](https://arxiv.org/abs/2002.01883)). 
+Implementation of RBF-DQN (see [paper](https://cs.brown.edu/people/gdk/pubs/deep_rbf.pdf)). 
 
 For installation, use Python >=3.7 (tested on 3.7.9). 
 
