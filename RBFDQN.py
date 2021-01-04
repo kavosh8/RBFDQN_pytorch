@@ -12,6 +12,7 @@ import torch.optim as optim
 import numpy
 import pickle
 
+
 def rbf_function_on_action(centroid_locations, action, beta):
 	'''
 	centroid_locations: Tensor [batch x num_centroids (N) x a_dim (action_size)]
@@ -25,12 +26,13 @@ def rbf_function_on_action(centroid_locations, action, beta):
 	assert len(action.shape) == 2, "Must pass tensor with shape: [batch x a_dim]"
 
 	diff_norm = centroid_locations - action.unsqueeze(dim=1).expand_as(centroid_locations)
-	diff_norm = diff_norm ** 2	
+	diff_norm = diff_norm**2
 	diff_norm = torch.sum(diff_norm, dim=2)
 	diff_norm = torch.sqrt(diff_norm + 1e-7)
 	diff_norm = diff_norm * beta * -1
 	weights = F.softmax(diff_norm, dim=1)  # batch x N
 	return weights
+
 
 def rbf_function(centroid_locations, action_set, beta):
 	'''
@@ -84,7 +86,8 @@ class Net(nn.Module):
 			    nn.Linear(self.state_size, self.params['layer_size_action_side']),
 			    nn.Dropout(p=self.params['dropout_rate']),
 			    nn.ReLU(),
-			    nn.Linear(self.params['layer_size_action_side'], self.action_size * self.N),
+			    nn.Linear(self.params['layer_size_action_side'],
+			              self.action_size * self.N),
 			    utils_for_q_learning.Reshape(-1, self.N, self.action_size),
 			    nn.Tanh(),
 			)
@@ -93,10 +96,12 @@ class Net(nn.Module):
 			    nn.Linear(self.state_size, self.params['layer_size_action_side']),
 			    nn.Dropout(p=self.params['dropout_rate']),
 			    nn.ReLU(),
-			    nn.Linear(self.params['layer_size_action_side'], self.params['layer_size_action_side']),
+			    nn.Linear(self.params['layer_size_action_side'],
+			              self.params['layer_size_action_side']),
 			    nn.Dropout(p=self.params['dropout_rate']),
-			    nn.ReLU(),		    
-			    nn.Linear(self.params['layer_size_action_side'], self.action_size * self.N),
+			    nn.ReLU(),
+			    nn.Linear(self.params['layer_size_action_side'],
+			              self.action_size * self.N),
 			    utils_for_q_learning.Reshape(-1, self.N, self.action_size),
 			    nn.Tanh(),
 			)
@@ -125,7 +130,6 @@ class Net(nn.Module):
 				print('unknown optimizer ....')
 		except:
 			print("no optimizer specified ... ")
-
 
 		self.to(self.device)
 
@@ -210,7 +214,9 @@ class Net(nn.Module):
 				_, a = self.get_best_qvalue_and_action(s)
 				a = a.cpu().numpy()
 			self.train()
-			noise = numpy.random.normal(loc=0.0, scale=self.params['noise'], size=len(a))
+			noise = numpy.random.normal(loc=0.0,
+			                            scale=self.params['noise'],
+			                            size=len(a))
 			a = a + noise
 			return a
 
@@ -229,7 +235,6 @@ class Net(nn.Module):
 		noise = numpy.random.normal(loc=0.0, scale=self.params['noise'], size=len(a))
 		a = a + noise
 		return a
-
 
 	def update(self, target_Q, count):
 		if len(self.buffer_object) < self.params['batch_size']:
@@ -304,16 +309,6 @@ if __name__ == '__main__':
 	all_times_per_updates = []
 	for episode in range(params['max_episode']):
 		print("episode {}".format(episode))
-		Q_this_episode = Net(params,
-		                     env,
-		                     state_size=len(s0),
-		                     action_size=len(env.action_space.low),
-		                     device=device)
-		utils_for_q_learning.sync_networks(target=Q_this_episode,
-		                                   online=Q_object,
-		                                   alpha=params['target_network_learning_rate'],
-		                                   copy=True)
-		Q_this_episode.eval()
 
 		s, done, t = env.reset(), False, 0
 		while not done:
@@ -322,7 +317,7 @@ if __name__ == '__main__':
 			elif params['policy_type'] == 'e_greedy_gaussian':
 				a = Q_object.e_greedy_gaussian_policy(s, episode + 1, 'train')
 			elif params['policy_type'] == 'gaussian':
-				a = Q_object.gaussian_policy(s, episode + 1, 'train')			
+				a = Q_object.gaussian_policy(s, episode + 1, 'train')
 			sp, r, done, _ = env.step(numpy.array(a))
 			t = t + 1
 			done_p = False if t == env._max_episode_steps else done
