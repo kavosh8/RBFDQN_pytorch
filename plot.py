@@ -22,16 +22,17 @@ def compute_fina_mean_and_std(li):
 	print(numpy.mean(li_last))
 	print(numpy.std(li_last) / 20)
 
+
 problems_name = [
-    'Pendulum',
-    'LunarLander',
-    'Bipedal',
-    'Hopper',
-    'Cheetah',
-    'Ant',
+    # 'Pendulum',
+    # 'LunarLander',
+    # 'Bipedal',
+    # 'Hopper',
+    # 'Cheetah',
+    # 'Ant',
     'InvertedDoublePendulum',
     'InvertedPendulum',
-    'Reacher'
+    'Walker'
 ]
 ylim_down = [-1500, -350, -100, -500, -500, -500, 0, 0, -80]
 ylim_up = [-100, 235, 300, 3000, 8000, 3000, 9350, 1000, -4]
@@ -49,32 +50,42 @@ labels = [
     '200 updates less target updates'
 ]
 colors = ['blue', 'black', 'brown', 'orange', 'green', 'yellow', 'black', 'purple']
-#for problem in [4]:
-for problem in [1,2]:
+
+for problem in range(len(problems_name)):
 	plt.subplot(4, 2, problem + 1)
 	print(problems_name[problem])
-	for setting in range(5,10):
-	#for setting in range(4):
+	for setting in range(5, 10):
+		#for setting in range(4):
 		hyper_parameter_name = str(problem) + str(setting)
 		acceptable_len = 00
 		li = []
 		for seed_num in range(20):
 			try:
-				temp = numpy.loadtxt("rbf_results/" + str(hyper_parameter_name) +"/" + str(seed_num) + ".txt")
+				temp = numpy.loadtxt("rbf_results/" + str(hyper_parameter_name) +
+				                     "/" + str(seed_num) + ".txt")
 				#plt.plot(smooth(temp),lw=1,color=colors[setting%len(colors)])
 				if len(temp) > acceptable_len:
 					li.append(temp)
-					
-					print(hyper_parameter_name,seed_num,numpy.mean(temp[-1:]),len(temp))	
+
+					print(hyper_parameter_name,
+					      seed_num,
+					      numpy.mean(temp[-1:]),
+					      len(temp))
 			except:
 				#print("problem")
 				pass
 		#print([len(x) for x in li])
 		li = truncate(li)
-		print(hyper_parameter_name,len(li[0]),
-		      numpy.mean(numpy.mean(li, axis=0)[-1:]),numpy.mean(li),len(li))
-		plt.plot(smooth(numpy.mean(li, axis=0)), label=setting, lw=5, color=colors[setting%len(colors)])
-		plt.tick_params( labelright=True)
+		print(hyper_parameter_name,
+		      len(li[0]),
+		      numpy.mean(numpy.mean(li, axis=0)[-1:]),
+		      numpy.mean(li),
+		      len(li))
+		plt.plot(smooth(numpy.mean(li, axis=0)),
+		         label=setting,
+		         lw=5,
+		         color=colors[setting % len(colors)])
+		plt.tick_params(labelright=True)
 		#plt.ylim([ylim_down[problem],ylim_up[problem]])
 		#plt.yticks([ylim_down[problem],ylim_up[problem]])
 	plt.title(problems_name[problem])
