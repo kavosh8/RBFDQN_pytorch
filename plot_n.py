@@ -57,7 +57,8 @@ def plot(data, x, y, hue, style, col, seed, savepath=None, show=True):
     palette = sns.color_palette('Set1', n_colors=len(data[hue].unique()), desat=0.5)
     # col_order = ['Pendulum-v0', 'LunarLanderContinuous-v2', 'BipedalWalker-v3',
     #         'Hopper-v3', 'HalfCheetah-v3', 'Ant-v3']
-    col_order = ['InvertedPendulum-v2', 'Walker2d-v2']
+    # col_order = ['InvertedPendulum-v2', 'Walker2d-v2']
+    col_order = ['Walker2d-v2']
     dashes = {
             'RBF-DQN'      : '',
             'ICNN'         : (1, 1),
